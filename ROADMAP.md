@@ -5,8 +5,8 @@
 Goal: provide a stable local Spotify MCP server for one authenticated Spotify
 account.
 
-- Streamable HTTP MCP transport.
-- Docker support.
+- Streamable HTTP MCP transport. Started with `spotify_ping`.
+- Docker support. Started with image and compose example.
 - Spotify Authorization Code OAuth flow.
 - Local token storage for development.
 - Automatic access token refresh.

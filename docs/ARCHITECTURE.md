@@ -26,6 +26,19 @@ spotify-mcp-server
 Spotify
 ```
 
+## HTTP Surface
+
+| Route | Purpose |
+| --- | --- |
+| `GET /health` | Process healthcheck. Does not call Spotify. |
+| `POST /mcp` | Streamable HTTP MCP requests. |
+| `GET /mcp` | Streamable HTTP SSE stream for an initialized MCP session. |
+| `DELETE /mcp` | Session termination for an initialized MCP session. |
+
+The MCP endpoint uses in-memory session tracking for the local server process.
+This is enough for the local single-user runtime. External token mode and any
+future horizontally scaled deployment will require a deliberate session strategy.
+
 ## Modes
 
 ### Single-User Local Mode

@@ -1,0 +1,13 @@
+services:
+  spotify-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "127.0.0.1:${PORT:-11070}:11070"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true

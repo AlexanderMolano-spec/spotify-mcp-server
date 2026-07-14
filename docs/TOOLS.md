@@ -5,6 +5,17 @@ remain stable once released.
 
 ## v0.1 Tools
 
+### `spotify_ping`
+
+Checks that the MCP server is reachable.
+
+Required scopes: none.
+
+Notes:
+
+- Does not call Spotify.
+- Useful for MCP client smoke tests.
+
 ### `spotify_get_profile`
 
 Returns the authenticated Spotify user's profile.

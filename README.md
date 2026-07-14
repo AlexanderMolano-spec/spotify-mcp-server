@@ -44,6 +44,56 @@ single-user flow is stable.
 - MCP HTTP server: `11070`
 - OAuth callback: `http://localhost:11070/auth/callback`
 
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run type checks:
+
+```bash
+npm run typecheck
+```
+
+Build:
+
+```bash
+npm run build
+```
+
+Start the compiled server:
+
+```bash
+npm start
+```
+
+Healthcheck:
+
+```bash
+curl http://localhost:11070/health
+```
+
+MCP endpoint:
+
+```text
+http://localhost:11070/mcp
+```
+
+The initial tool surface only exposes `spotify_ping`, which validates MCP
+transport without calling Spotify.
+
+## Docker
+
+Build and run with the example compose file:
+
+```bash
+cp .env.example .env
+docker compose -f docker-compose.example.yml up --build
+```
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
