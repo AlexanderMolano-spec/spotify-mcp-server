@@ -115,6 +115,17 @@ Implemented read-only Spotify Web API calls:
 - `GET /v1/me/player/currently-playing` through
   `spotify_get_current_track`.
 
+Implemented playback Spotify Web API commands:
+
+- `PUT /v1/me/player/play` through `spotify_play`.
+- `PUT /v1/me/player/pause` through `spotify_pause`.
+- `POST /v1/me/player/next` through `spotify_next`.
+- `POST /v1/me/player/previous` through `spotify_previous`.
+- `PUT /v1/me/player/volume` through `spotify_set_volume`.
+
+Playback commands require Spotify Premium and an available Spotify Connect
+device.
+
 ### Tool Registry
 
 - Define tool names, descriptions and JSON schemas.

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Playback control MCP tools:
+  - `spotify_play`
+  - `spotify_pause`
+  - `spotify_next`
+  - `spotify_previous`
+  - `spotify_set_volume`
 - Read-only MCP tools:
   - `spotify_search`
   - `spotify_get_devices`

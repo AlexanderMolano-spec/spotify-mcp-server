@@ -99,6 +99,11 @@ The initial tool surface exposes:
 - `spotify_get_devices`: lists Spotify Connect devices.
 - `spotify_get_playback_state`: reads current playback state.
 - `spotify_get_current_track`: reads the current track or episode.
+- `spotify_play`: starts or resumes playback.
+- `spotify_pause`: pauses playback.
+- `spotify_next`: skips to the next track.
+- `spotify_previous`: skips to the previous track.
+- `spotify_set_volume`: sets playback volume.
 
 ## Docker
 

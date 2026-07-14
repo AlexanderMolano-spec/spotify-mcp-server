@@ -110,6 +110,13 @@ Output:
 Starts or resumes playback. It may optionally accept a device id, URI or context
 URI.
 
+Input:
+
+- `deviceId`: optional Spotify Connect device id.
+- `uri`: optional Spotify URI. Track URIs play directly; album, artist and
+  playlist URIs are used as context.
+- `positionMs`: optional start position in ms.
+
 Required scopes:
 
 - `user-modify-playback-state`
@@ -123,6 +130,10 @@ Notes:
 
 Pauses playback.
 
+Input:
+
+- `deviceId`: optional Spotify Connect device id.
+
 Required scopes:
 
 - `user-modify-playback-state`
@@ -131,6 +142,10 @@ Required scopes:
 
 Skips to the next track.
 
+Input:
+
+- `deviceId`: optional Spotify Connect device id.
+
 Required scopes:
 
 - `user-modify-playback-state`
@@ -138,6 +153,10 @@ Required scopes:
 ### `spotify_previous`
 
 Skips to the previous track.
+
+Input:
+
+- `deviceId`: optional Spotify Connect device id.
 
 Required scopes:
 

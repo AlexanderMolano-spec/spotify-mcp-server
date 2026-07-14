@@ -6,7 +6,12 @@ import {
   getCurrentTrack,
   getCurrentUserProfile,
   getPlaybackState,
+  nextSpotify,
+  pauseSpotify,
+  playSpotify,
+  previousSpotify,
   searchSpotify,
+  setSpotifyVolume,
 } from '../spotify/spotifyWebApiClient.js';
 
 const searchTypes = ['track', 'artist', 'album', 'playlist'] as const;
@@ -195,6 +200,129 @@ export function registerSpotifyTools(server: McpServer) {
           structuredContent: {
             current,
           },
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_play',
+    {
+      title: 'Play Spotify',
+      description:
+        'Starts or resumes Spotify playback. Optionally plays a Spotify track, album, artist or playlist URI.',
+      inputSchema: {
+        deviceId: z.string().min(1).optional().describe('Optional Spotify Connect device id.'),
+        uri: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional Spotify URI. Track URIs play directly; other URIs are used as context.'),
+        positionMs: z.number().int().min(0).optional().describe('Optional start position in ms.'),
+      },
+    },
+    async ({ deviceId, uri, positionMs }) => {
+      try {
+        const result = await playSpotify({ deviceId, uri, positionMs });
+
+        return {
+          content: [{ type: 'text', text: 'Spotify playback started.' }],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_pause',
+    {
+      title: 'Pause Spotify',
+      description: 'Pauses Spotify playback.',
+      inputSchema: {
+        deviceId: z.string().min(1).optional().describe('Optional Spotify Connect device id.'),
+      },
+    },
+    async ({ deviceId }) => {
+      try {
+        const result = await pauseSpotify(deviceId);
+
+        return {
+          content: [{ type: 'text', text: 'Spotify playback paused.' }],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_next',
+    {
+      title: 'Next Spotify Track',
+      description: 'Skips to the next Spotify track.',
+      inputSchema: {
+        deviceId: z.string().min(1).optional().describe('Optional Spotify Connect device id.'),
+      },
+    },
+    async ({ deviceId }) => {
+      try {
+        const result = await nextSpotify(deviceId);
+
+        return {
+          content: [{ type: 'text', text: 'Skipped to next Spotify track.' }],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_previous',
+    {
+      title: 'Previous Spotify Track',
+      description: 'Skips to the previous Spotify track.',
+      inputSchema: {
+        deviceId: z.string().min(1).optional().describe('Optional Spotify Connect device id.'),
+      },
+    },
+    async ({ deviceId }) => {
+      try {
+        const result = await previousSpotify(deviceId);
+
+        return {
+          content: [{ type: 'text', text: 'Skipped to previous Spotify track.' }],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_set_volume',
+    {
+      title: 'Set Spotify Volume',
+      description: 'Sets Spotify playback volume.',
+      inputSchema: {
+        volumePercent: z.number().int().min(0).max(100).describe('Volume from 0 to 100.'),
+        deviceId: z.string().min(1).optional().describe('Optional Spotify Connect device id.'),
+      },
+    },
+    async ({ volumePercent, deviceId }) => {
+      try {
+        const result = await setSpotifyVolume({ volumePercent, deviceId });
+
+        return {
+          content: [{ type: 'text', text: `Spotify volume set to ${volumePercent}%.` }],
+          structuredContent: result,
         };
       } catch (error) {
         return errorResult(error);

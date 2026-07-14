@@ -123,21 +123,31 @@ type SpotifyPlaybackResponse = {
   currently_playing_type?: string;
 };
 
-async function spotifyFetch<T>(path: string): Promise<T>;
+type SpotifyFetchOptions = {
+  allowNoContent?: boolean;
+  method?: string;
+  body?: unknown;
+};
+
+async function spotifyFetch<T>(path: string, options?: SpotifyFetchOptions): Promise<T>;
 async function spotifyFetch<T>(
   path: string,
-  options: { allowNoContent: true },
+  options: SpotifyFetchOptions & { allowNoContent: true },
 ): Promise<T | null>;
-async function spotifyFetch<T>(path: string, options?: { allowNoContent?: boolean }) {
+async function spotifyFetch<T>(path: string, options?: SpotifyFetchOptions) {
   const accessToken = await getValidAccessToken();
+  const body = options?.body;
   const response = await fetch(`${SPOTIFY_API_BASE_URL}${path}`, {
+    method: options?.method ?? 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/json',
+      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
     },
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-  if (response.status === 204 && options?.allowNoContent) {
+  if (response.ok && options?.allowNoContent) {
     return null;
   }
 
@@ -151,6 +161,23 @@ async function spotifyFetch<T>(path: string, options?: { allowNoContent?: boolea
   }
 
   return (await response.json()) as T;
+}
+
+async function spotifyCommand(path: string, options?: { method?: string; body?: unknown }) {
+  await spotifyFetch<never>(path, {
+    method: options?.method ?? 'PUT',
+    body: options?.body,
+    allowNoContent: true,
+  });
+
+  return { ok: true };
+}
+
+function withDevice(path: string, deviceId?: string) {
+  if (!deviceId) return path;
+
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}device_id=${encodeURIComponent(deviceId)}`;
 }
 
 function simplifyArtist(artist: SpotifyArtistSummary) {
@@ -335,4 +362,71 @@ export async function getCurrentTrack() {
     currentlyPlayingType: playback.currentlyPlayingType,
     item: playback.item,
   };
+}
+
+export async function playSpotify({
+  deviceId,
+  uri,
+  positionMs,
+}: {
+  deviceId?: string;
+  uri?: string;
+  positionMs?: number;
+}) {
+  const body =
+    uri || positionMs !== undefined
+      ? {
+          ...(uri
+            ? uri.startsWith('spotify:track:')
+              ? { uris: [uri] }
+              : { context_uri: uri }
+            : {}),
+          ...(positionMs === undefined ? {} : { position_ms: positionMs }),
+        }
+      : undefined;
+
+  await spotifyCommand(withDevice('/me/player/play', deviceId), {
+    method: 'PUT',
+    body,
+  });
+
+  return { ok: true, action: 'play' };
+}
+
+export async function pauseSpotify(deviceId?: string) {
+  await spotifyCommand(withDevice('/me/player/pause', deviceId), { method: 'PUT' });
+
+  return { ok: true, action: 'pause' };
+}
+
+export async function nextSpotify(deviceId?: string) {
+  await spotifyCommand(withDevice('/me/player/next', deviceId), { method: 'POST' });
+
+  return { ok: true, action: 'next' };
+}
+
+export async function previousSpotify(deviceId?: string) {
+  await spotifyCommand(withDevice('/me/player/previous', deviceId), { method: 'POST' });
+
+  return { ok: true, action: 'previous' };
+}
+
+export async function setSpotifyVolume({
+  volumePercent,
+  deviceId,
+}: {
+  volumePercent: number;
+  deviceId?: string;
+}) {
+  const params = new URLSearchParams({
+    volume_percent: String(volumePercent),
+  });
+
+  if (deviceId) {
+    params.set('device_id', deviceId);
+  }
+
+  await spotifyCommand(`/me/player/volume?${params.toString()}`, { method: 'PUT' });
+
+  return { ok: true, action: 'set_volume', volumePercent };
 }
