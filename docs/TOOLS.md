@@ -49,6 +49,13 @@ Input:
 Required scopes: none for public catalog search, but an access token is still
 required.
 
+Output:
+
+- `tracks`
+- `artists`
+- `albums`
+- `playlists`
+
 ### `spotify_get_devices`
 
 Lists available Spotify Connect devices.
@@ -56,6 +63,10 @@ Lists available Spotify Connect devices.
 Required scopes:
 
 - `user-read-playback-state`
+
+Output:
+
+- `devices`
 
 ### `spotify_get_playback_state`
 
@@ -66,6 +77,18 @@ Required scopes:
 
 - `user-read-playback-state`
 
+Output:
+
+- `available`
+- `isPlaying`
+- `progressMs`
+- `repeatState`
+- `shuffleState`
+- `currentlyPlayingType`
+- `context`
+- `device`
+- `item`
+
 ### `spotify_get_current_track`
 
 Returns the current track or episode.
@@ -73,6 +96,14 @@ Returns the current track or episode.
 Required scopes:
 
 - `user-read-currently-playing`
+
+Output:
+
+- `available`
+- `isPlaying`
+- `progressMs`
+- `currentlyPlayingType`
+- `item`
 
 ### `spotify_play`
 

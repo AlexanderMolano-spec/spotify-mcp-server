@@ -95,6 +95,10 @@ The initial tool surface exposes:
 - `spotify_ping`: validates MCP transport without calling Spotify.
 - `spotify_get_profile`: calls Spotify Web API `/me` using the local OAuth
   token.
+- `spotify_search`: searches tracks, artists, albums and playlists.
+- `spotify_get_devices`: lists Spotify Connect devices.
+- `spotify_get_playback_state`: reads current playback state.
+- `spotify_get_current_track`: reads the current track or episode.
 
 ## Docker
 

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Read-only MCP tools:
+  - `spotify_search`
+  - `spotify_get_devices`
+  - `spotify_get_playback_state`
+  - `spotify_get_current_track`
 - Automatic Spotify access token refresh for local OAuth tokens.
 - Spotify Web API client foundation.
 - MCP tool `spotify_get_profile` backed by Spotify Web API `/me`.

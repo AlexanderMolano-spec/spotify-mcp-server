@@ -106,8 +106,14 @@ within the same server process.
 - Handle Spotify error responses.
 - Keep endpoint-specific behavior out of MCP tool handlers.
 
-The first implemented Spotify Web API call is `GET /v1/me`, exposed through the
-`spotify_get_profile` MCP tool.
+Implemented read-only Spotify Web API calls:
+
+- `GET /v1/me` through `spotify_get_profile`.
+- `GET /v1/search` through `spotify_search`.
+- `GET /v1/me/player/devices` through `spotify_get_devices`.
+- `GET /v1/me/player` through `spotify_get_playback_state`.
+- `GET /v1/me/player/currently-playing` through
+  `spotify_get_current_track`.
 
 ### Tool Registry
 
