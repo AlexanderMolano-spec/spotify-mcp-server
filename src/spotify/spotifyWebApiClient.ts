@@ -146,21 +146,34 @@ async function spotifyFetch<T>(path: string, options?: SpotifyFetchOptions) {
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-
-  if (response.ok && options?.allowNoContent) {
-    return null;
-  }
+  const responseBody = await response.text();
 
   if (!response.ok) {
-    const body = await response.text();
     throw new SpotifyMcpError('SPOTIFY_API_ERROR', 'Spotify Web API request failed.', {
       status: response.status,
-      body,
+      body: responseBody,
       path,
     });
   }
 
-  return (await response.json()) as T;
+  if (responseBody.trim() === '' && options?.allowNoContent) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(responseBody) as T;
+  } catch (error) {
+    const method = options?.method ?? 'GET';
+    if (options?.allowNoContent && method !== 'GET') {
+      return null;
+    }
+    throw new SpotifyMcpError('SPOTIFY_API_INVALID_JSON', 'Spotify Web API returned invalid JSON.', {
+      status: response.status,
+      body: responseBody,
+      path,
+      cause: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function spotifyCommand(path: string, options?: { method?: string; body?: unknown }) {
@@ -248,6 +261,38 @@ function simplifyDevice(device: SpotifyDevice) {
     volumePercent: device.volume_percent,
     supportsVolume: device.supports_volume,
   };
+}
+
+function assertSupportedSpotifyUri(uri: string) {
+  if (!/^spotify:(track|album|artist|playlist):[^:]+$/.test(uri)) {
+    throw new SpotifyMcpError('SPOTIFY_INVALID_URI', 'Unsupported Spotify URI format.', {
+      uri,
+      expected: 'spotify:track:<id>, spotify:album:<id>, spotify:artist:<id> or spotify:playlist:<id>',
+    });
+  }
+}
+
+function resolveDeviceByName(devices: ReturnType<typeof simplifyDevice>[], deviceName: string) {
+  const normalized = deviceName.trim().toLowerCase();
+  const matches = devices.filter((device) => device.name.trim().toLowerCase() === normalized);
+
+  if (matches.length === 1) return matches[0];
+
+  throw new SpotifyMcpError(
+    matches.length === 0 ? 'SPOTIFY_DEVICE_NOT_FOUND' : 'SPOTIFY_DEVICE_AMBIGUOUS',
+    matches.length === 0
+      ? 'No Spotify Connect device matched the requested name.'
+      : 'More than one Spotify Connect device matched the requested name.',
+    {
+      deviceName,
+      availableDevices: devices.map((device) => ({
+        id: device.id,
+        name: device.name,
+        type: device.type,
+        isActive: device.isActive,
+      })),
+    },
+  );
 }
 
 function simplifyPlayback(playback: SpotifyPlaybackResponse | null) {
@@ -373,6 +418,10 @@ export async function playSpotify({
   uri?: string;
   positionMs?: number;
 }) {
+  if (uri) {
+    assertSupportedSpotifyUri(uri);
+  }
+
   const body =
     uri || positionMs !== undefined
       ? {
@@ -391,6 +440,69 @@ export async function playSpotify({
   });
 
   return { ok: true, action: 'play' };
+}
+
+export async function playSpotifySearch({
+  query,
+  deviceId,
+  deviceName,
+}: {
+  query: string;
+  deviceId?: string;
+  deviceName?: string;
+}) {
+  let resolvedDeviceId = deviceId;
+  let resolvedDevice: ReturnType<typeof simplifyDevice> | null = null;
+
+  if (!resolvedDeviceId && deviceName) {
+    const { devices } = await getAvailableDevices();
+    resolvedDevice = resolveDeviceByName(devices, deviceName);
+    if (!resolvedDevice.id) {
+      throw new SpotifyMcpError('SPOTIFY_DEVICE_NOT_TRANSFERABLE', 'Matched Spotify device has no device id.', {
+        deviceName,
+        device: resolvedDevice,
+      });
+    }
+    resolvedDeviceId = resolvedDevice.id;
+  }
+
+  const results = await searchSpotify({ query, types: ['track'], limit: 5 });
+  const track = results.tracks[0];
+
+  if (!track) {
+    throw new SpotifyMcpError('SPOTIFY_TRACK_NOT_FOUND', 'No Spotify track matched the search query.', {
+      query,
+    });
+  }
+
+  await playSpotify({ deviceId: resolvedDeviceId, uri: track.uri });
+
+  return {
+    ok: true,
+    action: 'play_search',
+    query,
+    deviceId: resolvedDeviceId ?? null,
+    device: resolvedDevice,
+    track,
+  };
+}
+
+export async function transferSpotifyPlayback({
+  deviceId,
+  play = true,
+}: {
+  deviceId: string;
+  play?: boolean;
+}) {
+  await spotifyCommand('/me/player', {
+    method: 'PUT',
+    body: {
+      device_ids: [deviceId],
+      play,
+    },
+  });
+
+  return { ok: true, action: 'transfer_playback', deviceId, play };
 }
 
 export async function pauseSpotify(deviceId?: string) {

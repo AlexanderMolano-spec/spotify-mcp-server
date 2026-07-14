@@ -118,6 +118,9 @@ Implemented read-only Spotify Web API calls:
 Implemented playback Spotify Web API commands:
 
 - `PUT /v1/me/player/play` through `spotify_play`.
+- `GET /v1/search` + `PUT /v1/me/player/play` through
+  `spotify_play_search`.
+- `PUT /v1/me/player` through `spotify_transfer_playback`.
 - `PUT /v1/me/player/pause` through `spotify_pause`.
 - `POST /v1/me/player/next` through `spotify_next`.
 - `POST /v1/me/player/previous` through `spotify_previous`.

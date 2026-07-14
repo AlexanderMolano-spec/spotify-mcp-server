@@ -125,6 +125,56 @@ Notes:
 
 - Spotify Premium is required.
 - A device must be active or available.
+- `deviceId` is the Spotify Connect id returned by `spotify_get_devices`, not
+  the visible device name.
+- `uri` must be a valid Spotify URI such as `spotify:track:<id>`. Do not invent
+  or transform URLs/IDs into URIs.
+
+### `spotify_play_search`
+
+Searches Spotify for a track and immediately plays the best match. Use this when
+the user asks to play a song, artist/title combination or natural-language query
+instead of providing an exact Spotify URI.
+
+Input:
+
+- `query`: required song, artist or natural-language search query.
+- `deviceId`: optional Spotify Connect device id returned by
+  `spotify_get_devices`.
+- `deviceName`: optional exact visible device name. The tool resolves it to a
+  Spotify Connect device id before playback.
+
+Required scopes:
+
+- `user-read-playback-state` when resolving `deviceName`.
+- `user-modify-playback-state`
+
+Output:
+
+- selected `track`
+- resolved `deviceId`
+- optional resolved `device`
+
+### `spotify_transfer_playback`
+
+Transfers the active Spotify playback session to a Spotify Connect device.
+
+Input:
+
+- `deviceId`: required Spotify Connect device id returned by
+  `spotify_get_devices`.
+- `play`: optional boolean. Defaults to `true`; when true, playback continues
+  after the transfer.
+
+Required scopes:
+
+- `user-modify-playback-state`
+
+Notes:
+
+- When a user names a device, call `spotify_get_devices`, match by visible
+  `name`, then pass the matched `id` to this tool.
+- Spotify Premium is required.
 
 ### `spotify_pause`
 

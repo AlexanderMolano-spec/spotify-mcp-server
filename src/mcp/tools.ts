@@ -9,9 +9,11 @@ import {
   nextSpotify,
   pauseSpotify,
   playSpotify,
+  playSpotifySearch,
   previousSpotify,
   searchSpotify,
   setSpotifyVolume,
+  transferSpotifyPlayback,
 } from '../spotify/spotifyWebApiClient.js';
 
 const searchTypes = ['track', 'artist', 'album', 'playlist'] as const;
@@ -212,7 +214,7 @@ export function registerSpotifyTools(server: McpServer) {
     {
       title: 'Play Spotify',
       description:
-        'Starts or resumes Spotify playback. Optionally plays a Spotify track, album, artist or playlist URI.',
+        'Starts or resumes Spotify playback. Optionally plays a Spotify track, album, artist or playlist URI. deviceId must be the Spotify Connect device id returned by spotify_get_devices, not the visible device name.',
       inputSchema: {
         deviceId: z.string().min(1).optional().describe('Optional Spotify Connect device id.'),
         uri: z
@@ -229,6 +231,73 @@ export function registerSpotifyTools(server: McpServer) {
 
         return {
           content: [{ type: 'text', text: 'Spotify playback started.' }],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_play_search',
+    {
+      title: 'Search and Play Spotify Track',
+      description:
+        'Searches Spotify for a track by natural language query and immediately plays the best match. Prefer this over spotify_play when the user gives a song/artist/title instead of an exact Spotify URI.',
+      inputSchema: {
+        query: z.string().min(1).describe('Song, artist or natural language search query.'),
+        deviceId: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional Spotify Connect device id returned by spotify_get_devices.'),
+        deviceName: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional exact visible device name. The tool resolves it to a Spotify Connect device id.'),
+      },
+    },
+    async ({ query, deviceId, deviceName }) => {
+      try {
+        const result = await playSpotifySearch({ query, deviceId, deviceName });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Playing Spotify track: ${result.track.name}`,
+            },
+          ],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_transfer_playback',
+    {
+      title: 'Transfer Spotify Playback',
+      description:
+        'Transfers the active Spotify playback session to a Spotify Connect device. Use spotify_get_devices first when the user gives a device name; pass the matching device id, not the visible name.',
+      inputSchema: {
+        deviceId: z.string().min(1).describe('Spotify Connect device id returned by spotify_get_devices.'),
+        play: z
+          .boolean()
+          .optional()
+          .describe('Whether playback should continue after transfer. Defaults to true.'),
+      },
+    },
+    async ({ deviceId, play }) => {
+      try {
+        const result = await transferSpotifyPlayback({ deviceId, play });
+
+        return {
+          content: [{ type: 'text', text: 'Spotify playback transferred.' }],
           structuredContent: result,
         };
       } catch (error) {

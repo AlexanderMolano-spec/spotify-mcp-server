@@ -25,7 +25,8 @@ The first stable version will focus on:
 - Local single-user Spotify OAuth.
 - Automatic access token refresh.
 - Profile, search, devices and playback state tools.
-- Basic playback control tools.
+- Basic playback control tools, including playback transfer between Spotify
+  Connect devices.
 - Docker-based runtime.
 
 Playlist write operations and external token mode are planned after the local
@@ -100,6 +101,9 @@ The initial tool surface exposes:
 - `spotify_get_playback_state`: reads current playback state.
 - `spotify_get_current_track`: reads the current track or episode.
 - `spotify_play`: starts or resumes playback.
+- `spotify_play_search`: searches a track and plays the best match.
+- `spotify_transfer_playback`: transfers playback to another Spotify Connect
+  device.
 - `spotify_pause`: pauses playback.
 - `spotify_next`: skips to the next track.
 - `spotify_previous`: skips to the previous track.
