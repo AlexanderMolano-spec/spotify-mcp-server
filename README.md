@@ -90,8 +90,11 @@ MCP endpoint:
 http://localhost:11070/mcp
 ```
 
-The initial tool surface only exposes `spotify_ping`, which validates MCP
-transport without calling Spotify.
+The initial tool surface exposes:
+
+- `spotify_ping`: validates MCP transport without calling Spotify.
+- `spotify_get_profile`: calls Spotify Web API `/me` using the local OAuth
+  token.
 
 ## Docker
 
@@ -117,6 +120,9 @@ http://localhost:11070/auth/login
 ```
 
 See [Local Spotify OAuth Setup](docs/OAUTH_LOCAL_SETUP.md).
+
+Access tokens are refreshed automatically when they are expired or close to
+expiration.
 
 ## Documentation
 

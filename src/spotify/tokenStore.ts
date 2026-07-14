@@ -2,6 +2,8 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { z } from 'zod';
 import { config } from '../config/env.js';
+import { SpotifyMcpError } from './errors.js';
+import { refreshAccessToken } from './spotifyAccountsClient.js';
 
 const storedTokenSchema = z.object({
   accessToken: z.string().min(1),
@@ -67,4 +69,27 @@ export async function getTokenStatus() {
     scopes: token.scope,
     expired: Date.parse(token.expiresAt) <= Date.now(),
   };
+}
+
+export async function getValidAccessToken() {
+  const token = await readToken();
+
+  if (!token) {
+    throw new SpotifyMcpError(
+      'SPOTIFY_AUTH_REQUIRED',
+      'Spotify is not authenticated. Open /auth/login first.',
+    );
+  }
+
+  const expiresAt = Date.parse(token.expiresAt);
+  const refreshWindowMs = 60 * 1000;
+
+  if (expiresAt > Date.now() + refreshWindowMs) {
+    return token.accessToken;
+  }
+
+  const refreshedToken = await refreshAccessToken(token);
+  await saveToken(refreshedToken);
+
+  return refreshedToken.accessToken;
 }

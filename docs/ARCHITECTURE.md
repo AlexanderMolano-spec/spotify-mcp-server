@@ -93,8 +93,7 @@ This mode is better for multi-user systems.
 - Store tokens only in local mode.
 
 The current implementation supports authorization URL generation, callback
-handling, token exchange and local token persistence. Refresh is implemented in
-a later milestone before real Spotify tools are added.
+handling, token exchange, local token persistence and access token refresh.
 
 OAuth login also includes an in-memory `state` value with a short TTL. This is
 appropriate for local single-user mode because the login and callback happen
@@ -106,6 +105,9 @@ within the same server process.
 - Attach bearer tokens.
 - Handle Spotify error responses.
 - Keep endpoint-specific behavior out of MCP tool handlers.
+
+The first implemented Spotify Web API call is `GET /v1/me`, exposed through the
+`spotify_get_profile` MCP tool.
 
 ### Tool Registry
 

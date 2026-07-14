@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Automatic Spotify access token refresh for local OAuth tokens.
+- Spotify Web API client foundation.
+- MCP tool `spotify_get_profile` backed by Spotify Web API `/me`.
 - Local Spotify OAuth foundation with `/auth/login`, `/auth/callback` and
   `/auth/status`.
 - Short-lived OAuth `state` validation for the local login flow.

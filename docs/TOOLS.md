@@ -25,6 +25,17 @@ Required scopes:
 - `user-read-private`
 - `user-read-email`
 
+Output:
+
+- `id`
+- `displayName`
+- `email`
+- `country`
+- `product`
+- `uri`
+- `spotifyUrl`
+- `imageUrl`
+
 ### `spotify_search`
 
 Searches Spotify catalog content.
