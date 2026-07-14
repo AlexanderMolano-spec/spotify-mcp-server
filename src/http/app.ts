@@ -1,4 +1,6 @@
 import express from 'express';
+import { createAuthRouter } from '../spotify/auth.routes.js';
+import { getTokenStatus } from '../spotify/tokenStore.js';
 import {
   createMcpDeleteHandler,
   createMcpGetHandler,
@@ -10,7 +12,37 @@ export function createHttpApp() {
 
   app.use(express.json({ limit: '1mb' }));
 
-  app.get('/health', (_req, res) => {
+  app.get('/health', async (_req, res, next) => {
+    try {
+      const auth = await getTokenStatus();
+
+      res.status(200).json({
+        ok: true,
+        service: 'spotify-mcp-server',
+        auth,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.use('/auth', createAuthRouter());
+
+  app.get('/ready', async (_req, res, next) => {
+    try {
+      const auth = await getTokenStatus();
+
+      res.status(auth.authenticated ? 200 : 503).json({
+        ok: auth.authenticated,
+        service: 'spotify-mcp-server',
+        auth,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/live', (_req, res) => {
     res.status(200).json({
       ok: true,
       service: 'spotify-mcp-server',
@@ -29,6 +61,24 @@ export function createHttpApp() {
       },
     });
   });
+
+  app.use(
+    (
+      error: unknown,
+      _req: express.Request,
+      res: express.Response,
+      _next: express.NextFunction,
+    ) => {
+      console.error('Unhandled HTTP error', error);
+
+      res.status(500).json({
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Internal server error.',
+        },
+      });
+    },
+  );
 
   return app;
 }

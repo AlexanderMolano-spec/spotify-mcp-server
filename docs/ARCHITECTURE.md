@@ -31,6 +31,11 @@ Spotify
 | Route | Purpose |
 | --- | --- |
 | `GET /health` | Process healthcheck. Does not call Spotify. |
+| `GET /ready` | Readiness check. Returns 503 until local OAuth has a token. |
+| `GET /live` | Liveness check. Does not inspect OAuth state. |
+| `GET /auth/login` | Starts local Spotify Authorization Code OAuth. |
+| `GET /auth/callback` | Handles Spotify OAuth callback and stores local token. |
+| `GET /auth/status` | Reports local OAuth configuration and token status. |
 | `POST /mcp` | Streamable HTTP MCP requests. |
 | `GET /mcp` | Streamable HTTP SSE stream for an initialized MCP session. |
 | `DELETE /mcp` | Session termination for an initialized MCP session. |
@@ -38,6 +43,10 @@ Spotify
 The MCP endpoint uses in-memory session tracking for the local server process.
 This is enough for the local single-user runtime. External token mode and any
 future horizontally scaled deployment will require a deliberate session strategy.
+
+Spotify requires HTTPS redirect URIs except for loopback IP literals. For local
+development, use `http://127.0.0.1:11070/auth/callback`; `localhost` is not a
+valid Spotify redirect URI.
 
 ## Modes
 
@@ -82,6 +91,14 @@ This mode is better for multi-user systems.
 - Exchange authorization code for tokens.
 - Refresh access tokens.
 - Store tokens only in local mode.
+
+The current implementation supports authorization URL generation, callback
+handling, token exchange and local token persistence. Refresh is implemented in
+a later milestone before real Spotify tools are added.
+
+OAuth login also includes an in-memory `state` value with a short TTL. This is
+appropriate for local single-user mode because the login and callback happen
+within the same server process.
 
 ### Spotify Client
 

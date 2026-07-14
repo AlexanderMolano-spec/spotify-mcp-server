@@ -7,8 +7,9 @@ account.
 
 - Streamable HTTP MCP transport. Started with `spotify_ping`.
 - Docker support. Started with image and compose example.
-- Spotify Authorization Code OAuth flow.
-- Local token storage for development.
+- Spotify Authorization Code OAuth flow. Started with login, callback and
+  status endpoints.
+- Local token storage for development. Started with `.spotify-token.json`.
 - Automatic access token refresh.
 - Read-only tools for profile, search, devices, playback state and current
   track.

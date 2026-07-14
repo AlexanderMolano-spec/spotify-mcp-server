@@ -42,7 +42,7 @@ single-user flow is stable.
 ## Default Ports
 
 - MCP HTTP server: `11070`
-- OAuth callback: `http://localhost:11070/auth/callback`
+- OAuth callback: `http://127.0.0.1:11070/auth/callback`
 
 ## Local Development
 
@@ -70,10 +70,18 @@ Start the compiled server:
 npm start
 ```
 
+`dev` and `start` load `.env` automatically.
+
 Healthcheck:
 
 ```bash
 curl http://localhost:11070/health
+```
+
+Auth status:
+
+```bash
+curl http://localhost:11070/auth/status
 ```
 
 MCP endpoint:
@@ -94,9 +102,26 @@ cp .env.example .env
 docker compose -f docker-compose.example.yml up --build
 ```
 
+## Local Spotify OAuth
+
+Create a Spotify Developer application with this redirect URI:
+
+```text
+http://127.0.0.1:11070/auth/callback
+```
+
+Then configure `.env` and open:
+
+```text
+http://localhost:11070/auth/login
+```
+
+See [Local Spotify OAuth Setup](docs/OAUTH_LOCAL_SETUP.md).
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Local Spotify OAuth Setup](docs/OAUTH_LOCAL_SETUP.md)
 - [Spotify Scopes](docs/SPOTIFY_SCOPES.md)
 - [Tool Contract](docs/TOOLS.md)
 - [Roadmap](ROADMAP.md)
