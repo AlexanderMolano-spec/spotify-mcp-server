@@ -1,2 +1,65 @@
-# spotify-mcp-server
-Spotify MCP Server for AI agents: a Streamable HTTP Model Context Protocol server that lets agents search Spotify, inspect playback state, manage devices, and control music through the official Spotify Web API.
+# Spotify MCP Server
+
+Spotify MCP Server for AI agents: a Streamable HTTP Model Context Protocol
+server that lets agents search Spotify, inspect playback state, manage devices
+and control music through the official Spotify Web API.
+
+## Status
+
+Early design phase. The first target is a local single-user MCP server with
+Spotify OAuth, Docker support and a small stable tool surface.
+
+## Goals
+
+- Expose Spotify Web API capabilities as MCP tools.
+- Use official OAuth instead of browser automation.
+- Support local personal agents first.
+- Keep the project reusable by different MCP clients.
+- Provide a future path for multi-user agent backends.
+
+## Initial Scope
+
+The first stable version will focus on:
+
+- Streamable HTTP MCP transport.
+- Local single-user Spotify OAuth.
+- Automatic access token refresh.
+- Profile, search, devices and playback state tools.
+- Basic playback control tools.
+- Docker-based runtime.
+
+Playlist write operations and external token mode are planned after the local
+single-user flow is stable.
+
+## Requirements
+
+- Spotify account.
+- Spotify Developer application.
+- Spotify Premium for playback control endpoints.
+- Node.js runtime for local development.
+- Docker for containerized usage.
+
+## Default Ports
+
+- MCP HTTP server: `11070`
+- OAuth callback: `http://localhost:11070/auth/callback`
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Spotify Scopes](docs/SPOTIFY_SCOPES.md)
+- [Tool Contract](docs/TOOLS.md)
+- [Roadmap](ROADMAP.md)
+
+## Security
+
+Do not commit secrets or tokens. Use `.env` for Spotify application credentials
+and keep local token files out of git.
+
+The project should request only the scopes required by its enabled tools. New
+write permissions should be introduced deliberately and documented before they
+are implemented.
+
+## License
+
+License pending.
