@@ -36,6 +36,56 @@ function errorResult(error: unknown) {
   };
 }
 
+function artistNames(track: { artists?: Array<string | { name?: string | null }> } | null | undefined) {
+  const names = track?.artists
+    ?.map((artist) => (typeof artist === 'string' ? artist : artist.name))
+    .filter(Boolean);
+
+  return names && names.length > 0 ? names.join(', ') : 'Unknown artist';
+}
+
+function trackName(track: { name?: string | null } | null | undefined) {
+  return track?.name || 'Unknown title';
+}
+
+function playlistTracksText(result: {
+  offset: number;
+  total: number;
+  tracks: Array<{ position: number; track?: { name?: string | null; artists?: Array<string | { name?: string | null }> } }>;
+}) {
+  const start = result.offset + 1;
+  const end = result.offset + result.tracks.length;
+  const lines = result.tracks.map((item) => {
+    const displayPosition = item.position + 1;
+    return `${displayPosition}. ${trackName(item.track)} - ${artistNames(item.track)}`;
+  });
+
+  return [`Spotify playlist tracks ${start}-${end} of ${result.total}:`, ...lines].join('\n');
+}
+
+function queueText(result: {
+  currentlyPlaying?: { name?: string | null; artists?: Array<string | { name?: string | null }> } | null;
+  queue: Array<{ name?: string | null; artists?: Array<string | { name?: string | null }> }>;
+  totalAvailable: number;
+}) {
+  const lines = [];
+
+  if (result.currentlyPlaying) {
+    lines.push(`Now playing: ${trackName(result.currentlyPlaying)} - ${artistNames(result.currentlyPlaying)}`);
+  }
+
+  if (result.queue.length > 0) {
+    lines.push(`Queue (${result.queue.length} of ${result.totalAvailable}):`);
+    lines.push(
+      ...result.queue.map((track, index) => `${index + 1}. ${trackName(track)} - ${artistNames(track)}`),
+    );
+  } else {
+    lines.push('Spotify queue has no next item available.');
+  }
+
+  return lines.join('\n');
+}
+
 export function registerSpotifyTools(server: McpServer) {
   server.registerTool(
     'spotify_ping',
@@ -257,19 +307,21 @@ export function registerSpotifyTools(server: McpServer) {
         'Returns the current Spotify item and upcoming queue. Use this when the user asks what is next or what is in the queue.',
       inputSchema: {
         limit: z.number().int().min(1).max(50).default(10).describe('Maximum queued items to return.'),
+        includeDetails: z
+          .boolean()
+          .default(false)
+          .describe('When true, includes full track metadata. Default false keeps output compact.'),
       },
     },
-    async ({ limit }) => {
+    async ({ limit, includeDetails }) => {
       try {
-        const queue = await getQueue({ limit });
+        const queue = await getQueue({ limit, includeDetails });
 
         return {
           content: [
             {
               type: 'text',
-              text: queue.nextTrack
-                ? `Next Spotify item: ${queue.nextTrack.name}`
-                : 'Spotify queue has no next item available.',
+              text: queueText(queue),
             },
           ],
           structuredContent: {
@@ -350,7 +402,7 @@ export function registerSpotifyTools(server: McpServer) {
           content: [
             {
               type: 'text',
-              text: `Spotify playlist tracks ${result.offset + 1}-${result.offset + result.tracks.length} of ${result.total}`,
+              text: playlistTracksText(result),
             },
           ],
           structuredContent: result,

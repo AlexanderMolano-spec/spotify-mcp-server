@@ -258,6 +258,16 @@ function simplifyTrack(track: SpotifyTrackSummary) {
   };
 }
 
+function compactTrack(track: SpotifyTrackSummary) {
+  return {
+    id: track.id ?? null,
+    name: track.name ?? null,
+    uri: track.uri ?? null,
+    durationMs: track.duration_ms ?? null,
+    artists: track.artists?.map((artist) => artist.name) ?? [],
+  };
+}
+
 function simplifyPlaylist(playlist: SpotifyPlaylistSummary) {
   return {
     id: playlist.id,
@@ -551,12 +561,16 @@ export async function getCurrentTrack() {
   };
 }
 
-export async function getQueue({ limit = 10 }: { limit?: number } = {}) {
+export async function getQueue({ limit = 10, includeDetails = false }: { limit?: number; includeDetails?: boolean } = {}) {
   const response = await spotifyFetch<SpotifyQueueResponse>('/me/player/queue');
-  const queue = response.queue.slice(0, limit).map(simplifyTrack);
+  const queue = response.queue.slice(0, limit).map((track) => (includeDetails ? simplifyTrack(track) : compactTrack(track)));
 
   return {
-    currentlyPlaying: response.currently_playing ? simplifyTrack(response.currently_playing) : null,
+    currentlyPlaying: response.currently_playing
+      ? includeDetails
+        ? simplifyTrack(response.currently_playing)
+        : compactTrack(response.currently_playing)
+      : null,
     nextTrack: queue[0] ?? null,
     queue,
     returned: queue.length,
@@ -614,15 +628,7 @@ export async function getPlaylistTracks({
       .map((item, index) => ({
         position: response.offset + index,
         addedAt: includeDetails ? (item.added_at ?? null) : null,
-        track: includeDetails
-          ? simplifyTrack(item.track as SpotifyTrackSummary)
-          : {
-              id: item.track?.id ?? null,
-              name: item.track?.name ?? null,
-              uri: item.track?.uri ?? null,
-              durationMs: item.track?.duration_ms ?? null,
-              artists: item.track?.artists?.map((artist) => artist.name) ?? [],
-            },
+        track: includeDetails ? simplifyTrack(item.track as SpotifyTrackSummary) : compactTrack(item.track as SpotifyTrackSummary),
       })),
   };
 }

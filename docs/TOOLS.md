@@ -136,6 +136,8 @@ Returns the current Spotify item and upcoming queue.
 Input:
 
 - `limit`: optional number from 1 to 50. Default 10.
+- `includeDetails`: optional boolean. Default false keeps output compact by
+  returning only name, artists, duration and URI.
 
 Required scopes:
 
@@ -146,7 +148,7 @@ Output:
 
 - `currentlyPlaying`
 - `nextTrack`
-- `queue`: compact list of queued items, limited by `limit`
+- `queue`: compact list of queued items by default, limited by `limit`
 - `returned`
 - `totalAvailable`
 
@@ -321,6 +323,8 @@ Required scopes:
 Notes:
 
 - Prefer `playlistName` for phrases like "pon mi playlist X".
+- Use `position` when a user selects a numbered track from a listed playlist;
+  this preserves playlist context and queues the following playlist tracks.
 - If several current-user playlists share the same name, the tool returns an
   ambiguity error with the candidates instead of guessing.
 
