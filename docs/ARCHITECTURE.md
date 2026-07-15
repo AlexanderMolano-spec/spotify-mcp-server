@@ -110,6 +110,7 @@ Implemented read-only Spotify Web API calls:
 
 - `GET /v1/me` through `spotify_get_profile`.
 - `GET /v1/search` through `spotify_search`.
+- `GET /v1/me/playlists` through `spotify_get_playlists`.
 - `GET /v1/me/player/devices` through `spotify_get_devices`.
 - `GET /v1/me/player` through `spotify_get_playback_state`.
 - `GET /v1/me/player/currently-playing` through
@@ -120,6 +121,8 @@ Implemented playback Spotify Web API commands:
 - `PUT /v1/me/player/play` through `spotify_play`.
 - `GET /v1/search` + `PUT /v1/me/player/play` through
   `spotify_play_search`.
+- `GET /v1/me/playlists` + `PUT /v1/me/player/play` through
+  `spotify_play_playlist`.
 - `PUT /v1/me/player` through `spotify_transfer_playback`.
 - `PUT /v1/me/player/pause` through `spotify_pause`.
 - `POST /v1/me/player/next` through `spotify_next`.

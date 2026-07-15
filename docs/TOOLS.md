@@ -68,6 +68,30 @@ Output:
 
 - `devices`
 
+### `spotify_get_playlists`
+
+Lists playlists owned or followed by the authenticated Spotify user. This can
+include private and collaborative playlists when the OAuth token has the
+documented scopes.
+
+Input:
+
+- `limit`: optional number from 1 to 50. Default 10.
+- `offset`: optional pagination offset. Default 0.
+- `includeDetails`: optional boolean. Default false keeps output compact by
+  omitting long descriptions, image URLs and external URLs.
+
+Required scopes:
+
+- `playlist-read-private`
+- `playlist-read-collaborative` for collaborative playlists.
+
+Output:
+
+- `playlists`: compact by default (`id`, `name`, `uri`, owner, track count and
+  visibility flags)
+- pagination fields: `total`, `limit`, `offset`, `next`, `previous`
+
 ### `spotify_get_playback_state`
 
 Returns current playback state, device, volume, repeat, shuffle and currently
@@ -175,6 +199,37 @@ Notes:
 - When a user names a device, call `spotify_get_devices`, match by visible
   `name`, then pass the matched `id` to this tool.
 - Spotify Premium is required.
+
+### `spotify_play_playlist`
+
+Starts playback from a Spotify playlist.
+
+Input:
+
+- `playlistName`: optional exact visible playlist name from the current user's
+  playlists.
+- `playlistId`: optional exact Spotify playlist id.
+- `playlistUri`: optional exact Spotify playlist URI.
+- `deviceId`: optional Spotify Connect device id returned by
+  `spotify_get_devices`.
+- `deviceName`: optional exact visible device name. The tool resolves it to a
+  Spotify Connect device id.
+- `position`: optional zero-based track position in the playlist.
+
+At least one of `playlistName`, `playlistId` or `playlistUri` is required.
+
+Required scopes:
+
+- `playlist-read-private` when resolving `playlistName` from current-user
+  playlists.
+- `user-read-playback-state` when resolving `deviceName`.
+- `user-modify-playback-state`
+
+Notes:
+
+- Prefer `playlistName` for phrases like "pon mi playlist X".
+- If several current-user playlists share the same name, the tool returns an
+  ambiguity error with the candidates instead of guessing.
 
 ### `spotify_pause`
 

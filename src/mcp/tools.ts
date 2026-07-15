@@ -5,9 +5,11 @@ import {
   getAvailableDevices,
   getCurrentTrack,
   getCurrentUserProfile,
+  getCurrentUserPlaylists,
   getPlaybackState,
   nextSpotify,
   pauseSpotify,
+  playSpotifyPlaylist,
   playSpotify,
   playSpotifySearch,
   previousSpotify,
@@ -116,6 +118,40 @@ export function registerSpotifyTools(server: McpServer) {
             limit,
             results,
           },
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_get_playlists',
+    {
+      title: 'Get Current User Playlists',
+      description:
+        'Lists playlists owned or followed by the authenticated Spotify user, including private/collaborative playlists when the token has the required scopes.',
+      inputSchema: {
+        limit: z.number().int().min(1).max(50).default(10).describe('Maximum playlists to return.'),
+        offset: z.number().int().min(0).default(0).describe('Pagination offset.'),
+        includeDetails: z
+          .boolean()
+          .default(false)
+          .describe('When true, includes descriptions, URLs and images. Default false keeps output compact.'),
+      },
+    },
+    async ({ limit, offset, includeDetails }) => {
+      try {
+        const result = await getCurrentUserPlaylists({ limit, offset, includeDetails });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Spotify playlists ${result.offset + 1}-${result.offset + result.playlists.length} of ${result.total}`,
+            },
+          ],
+          structuredContent: result,
         };
       } catch (error) {
         return errorResult(error);
@@ -298,6 +334,54 @@ export function registerSpotifyTools(server: McpServer) {
 
         return {
           content: [{ type: 'text', text: 'Spotify playback transferred.' }],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_play_playlist',
+    {
+      title: 'Play Spotify Playlist',
+      description:
+        'Starts playback from a Spotify playlist. Prefer playlistName for current-user playlists; the tool resolves it through spotify_get_playlists semantics. Use playlistId or playlistUri only when exact.',
+      inputSchema: {
+        playlistName: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Exact visible playlist name from the authenticated user playlists.'),
+        playlistId: z.string().min(1).optional().describe('Exact Spotify playlist id.'),
+        playlistUri: z.string().min(1).optional().describe('Exact Spotify playlist URI.'),
+        deviceId: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional Spotify Connect device id returned by spotify_get_devices.'),
+        deviceName: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional exact visible device name. The tool resolves it to a Spotify Connect device id.'),
+        position: z.number().int().min(0).optional().describe('Optional zero-based track position in the playlist.'),
+      },
+    },
+    async ({ playlistName, playlistId, playlistUri, deviceId, deviceName, position }) => {
+      try {
+        const result = await playSpotifyPlaylist({
+          playlistName,
+          playlistId,
+          playlistUri,
+          deviceId,
+          deviceName,
+          position,
+        });
+
+        return {
+          content: [{ type: 'text', text: 'Spotify playlist playback started.' }],
           structuredContent: result,
         };
       } catch (error) {

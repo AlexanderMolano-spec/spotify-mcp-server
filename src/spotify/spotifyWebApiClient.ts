@@ -107,6 +107,16 @@ type SpotifyDevicesResponse = {
   devices: SpotifyDevice[];
 };
 
+type SpotifyPlaylistsResponse = {
+  href: string;
+  limit: number;
+  next: string | null;
+  offset: number;
+  previous: string | null;
+  total: number;
+  items: Array<SpotifyPlaylistSummary | null>;
+};
+
 type SpotifyPlaybackResponse = {
   device?: SpotifyDevice;
   repeat_state?: string;
@@ -295,6 +305,31 @@ function resolveDeviceByName(devices: ReturnType<typeof simplifyDevice>[], devic
   );
 }
 
+function resolvePlaylistByName(playlists: ReturnType<typeof simplifyPlaylist>[], playlistName: string) {
+  const normalized = playlistName.trim().toLowerCase();
+  const matches = playlists.filter((playlist) => playlist.name.trim().toLowerCase() === normalized);
+
+  if (matches.length === 1) return matches[0];
+
+  throw new SpotifyMcpError(
+    matches.length === 0 ? 'SPOTIFY_PLAYLIST_NOT_FOUND' : 'SPOTIFY_PLAYLIST_AMBIGUOUS',
+    matches.length === 0
+      ? 'No current-user Spotify playlist matched the requested name.'
+      : 'More than one current-user Spotify playlist matched the requested name.',
+    {
+      playlistName,
+      availablePlaylists: playlists.map((playlist) => ({
+        id: playlist.id,
+        name: playlist.name,
+        owner: playlist.owner,
+        totalTracks: playlist.totalTracks,
+        public: playlist.public,
+        collaborative: playlist.collaborative,
+      })),
+    },
+  );
+}
+
 function simplifyPlayback(playback: SpotifyPlaybackResponse | null) {
   if (!playback) {
     return {
@@ -374,6 +409,50 @@ export async function searchSpotify({
       response.playlists?.items
         .filter((playlist): playlist is SpotifyPlaylistSummary => Boolean(playlist))
         .map(simplifyPlaylist) ?? [],
+  };
+}
+
+export async function getCurrentUserPlaylists({
+  limit = 10,
+  offset = 0,
+  includeDetails = false,
+}: {
+  limit?: number;
+  offset?: number;
+  includeDetails?: boolean;
+} = {}) {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const response = await spotifyFetch<SpotifyPlaylistsResponse>(`/me/playlists?${params.toString()}`);
+
+  return {
+    href: response.href,
+    limit: response.limit,
+    next: response.next,
+    offset: response.offset,
+    previous: response.previous,
+    total: response.total,
+    playlists: response.items
+      .filter((playlist): playlist is SpotifyPlaylistSummary => Boolean(playlist))
+      .map((playlist) => {
+        const simplified = simplifyPlaylist(playlist);
+        if (includeDetails) return simplified;
+
+        return {
+          id: simplified.id,
+          name: simplified.name,
+          description: null,
+          uri: simplified.uri,
+          spotifyUrl: null,
+          imageUrl: null,
+          owner: simplified.owner,
+          totalTracks: simplified.totalTracks,
+          public: simplified.public,
+          collaborative: simplified.collaborative,
+        };
+      }),
   };
 }
 
@@ -484,6 +563,75 @@ export async function playSpotifySearch({
     deviceId: resolvedDeviceId ?? null,
     device: resolvedDevice,
     track,
+  };
+}
+
+export async function playSpotifyPlaylist({
+  playlistId,
+  playlistUri,
+  playlistName,
+  deviceId,
+  deviceName,
+  position,
+}: {
+  playlistId?: string;
+  playlistUri?: string;
+  playlistName?: string;
+  deviceId?: string;
+  deviceName?: string;
+  position?: number;
+}) {
+  let resolvedDeviceId = deviceId;
+  let resolvedDevice: ReturnType<typeof simplifyDevice> | null = null;
+
+  if (!resolvedDeviceId && deviceName) {
+    const { devices } = await getAvailableDevices();
+    resolvedDevice = resolveDeviceByName(devices, deviceName);
+    if (!resolvedDevice.id) {
+      throw new SpotifyMcpError('SPOTIFY_DEVICE_NOT_TRANSFERABLE', 'Matched Spotify device has no device id.', {
+        deviceName,
+        device: resolvedDevice,
+      });
+    }
+    resolvedDeviceId = resolvedDevice.id;
+  }
+
+  let resolvedPlaylist = null;
+  let uri = playlistUri;
+
+  if (uri) {
+    assertSupportedSpotifyUri(uri);
+    if (!uri.startsWith('spotify:playlist:')) {
+      throw new SpotifyMcpError('SPOTIFY_INVALID_PLAYLIST_URI', 'Spotify URI is not a playlist URI.', { uri });
+    }
+  } else if (playlistId) {
+    uri = `spotify:playlist:${playlistId}`;
+  } else if (playlistName) {
+    const { playlists } = await getCurrentUserPlaylists({ limit: 50, offset: 0, includeDetails: true });
+    resolvedPlaylist = resolvePlaylistByName(playlists, playlistName);
+    uri = resolvedPlaylist.uri;
+  }
+
+  if (!uri) {
+    throw new SpotifyMcpError('SPOTIFY_PLAYLIST_REQUIRED', 'Provide playlistId, playlistUri or playlistName.');
+  }
+
+  await spotifyCommand(withDevice('/me/player/play', resolvedDeviceId), {
+    method: 'PUT',
+    body: {
+      context_uri: uri,
+      ...(position === undefined ? {} : { offset: { position } }),
+    },
+  });
+
+  return {
+    ok: true,
+    action: 'play_playlist',
+    playlistUri: uri,
+    playlist: resolvedPlaylist,
+    deviceId: resolvedDeviceId ?? null,
+    device: resolvedDevice,
+    position: position ?? null,
   };
 }
 
