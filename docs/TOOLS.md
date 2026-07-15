@@ -322,7 +322,11 @@ Required scopes:
 
 Notes:
 
-- Prefer `playlistName` for phrases like "pon mi playlist X".
+- Prefer `playlistName` only for current-user playlists already owned or
+  followed by the authenticated user.
+- For public Spotify playlists that are not in the user's library, call
+  `spotify_search` with type `playlist`, ask the user to choose if needed, then
+  pass the selected `playlistId` or `playlistUri`.
 - Use `position` when a user selects a numbered track from a listed playlist;
   this preserves playlist context and queues the following playlist tracks.
 - If several current-user playlists share the same name, the tool returns an

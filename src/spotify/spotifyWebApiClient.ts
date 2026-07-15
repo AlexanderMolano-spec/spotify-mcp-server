@@ -353,11 +353,21 @@ function resolvePlaylistByName(playlists: ReturnType<typeof simplifyPlaylist>[],
 
   if (matches.length === 1) return matches[0];
 
+  if (matches.length === 0) {
+    throw new SpotifyMcpError(
+      'SPOTIFY_PLAYLIST_NOT_FOUND',
+      'No current-user Spotify playlist matched the requested name.',
+      {
+        playlistName,
+        scope: 'current_user_playlists',
+        hint: 'For public Spotify playlists that are not in the current user library, call spotify_search with type playlist, then pass the selected playlistId or playlistUri to spotify_play_playlist.',
+      },
+    );
+  }
+
   throw new SpotifyMcpError(
-    matches.length === 0 ? 'SPOTIFY_PLAYLIST_NOT_FOUND' : 'SPOTIFY_PLAYLIST_AMBIGUOUS',
-    matches.length === 0
-      ? 'No current-user Spotify playlist matched the requested name.'
-      : 'More than one current-user Spotify playlist matched the requested name.',
+    'SPOTIFY_PLAYLIST_AMBIGUOUS',
+    'More than one current-user Spotify playlist matched the requested name.',
     {
       playlistName,
       availablePlaylists: playlists.map((playlist) => ({
