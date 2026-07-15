@@ -6,8 +6,10 @@ and control music through the official Spotify Web API.
 
 ## Status
 
-Early design phase. The first target is a local single-user MCP server with
-Spotify OAuth, Docker support and a small stable tool surface.
+Active early release. The project currently supports a local single-user
+Spotify OAuth flow, Docker-based runtime, Streamable HTTP MCP transport and a
+practical playback/read-only tool surface. The public contract is still
+evolving, so review the changelog before upgrading.
 
 ## Goals
 
@@ -30,8 +32,8 @@ The first stable version will focus on:
   Connect devices.
 - Docker-based runtime.
 
-Playlist write operations and external token mode are planned after the local
-single-user flow is stable.
+Playlist write operations and delegated/external token mode are planned after
+the local single-user flow is stable.
 
 ## Requirements
 
@@ -163,6 +165,10 @@ The project should request only the scopes required by its enabled tools. New
 write permissions should be introduced deliberately and documented before they
 are implemented.
 
+The default OAuth/token store is intended for local single-user use. Multi-user
+agent backends should own user identity, token encryption and refresh outside of
+this MCP server, then integrate through the planned delegated token mode.
+
 ## License
 
-License pending.
+MIT.

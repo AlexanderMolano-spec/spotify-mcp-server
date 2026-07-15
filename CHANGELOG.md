@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Playback transfer and device-aware playback helpers:
+  - `spotify_get_devices`
+  - `spotify_transfer_playback`
+- Queue and playlist context tools:
+  - `spotify_get_queue`
+  - `spotify_get_next_track`
+  - `spotify_get_playlists`
+  - `spotify_get_playlist_tracks`
+  - `spotify_play_playlist`
+- Compact agent-friendly text output for queue and playlist track tools.
+- Compact `SPOTIFY_PLAYLIST_NOT_FOUND` guidance when a requested playlist is
+  not part of the authenticated user's library.
 - Playback control MCP tools:
   - `spotify_play`
   - `spotify_pause`

@@ -5,15 +5,18 @@
 Goal: provide a stable local Spotify MCP server for one authenticated Spotify
 account.
 
-- Streamable HTTP MCP transport. Started with `spotify_ping`.
-- Docker support. Started with image and compose example.
-- Spotify Authorization Code OAuth flow. Started with login, callback and
-  status endpoints.
-- Local token storage for development. Started with `.spotify-token.json`.
+- Streamable HTTP MCP transport.
+- Docker support with image and compose example.
+- Spotify Authorization Code OAuth flow with login, callback and status
+  endpoints.
+- Local token storage for development with `.spotify-token.json`.
 - Automatic access token refresh. Implemented for the local token store.
 - Read-only tools for profile, search, devices, playback state and current
   track.
 - Playback tools for play, pause, next, previous and volume.
+- Queue tools for current/upcoming playback context.
+- Playlist read and playlist playback tools.
+- Playback transfer between Spotify Connect devices.
 
 ## v0.2.0 - Playlist Operations
 
@@ -34,7 +37,6 @@ Goal: let host agents manage identity and tokens.
 
 ## Future
 
-- Queue management.
 - Recently played and top items.
 - Better device selection.
 - MCP client examples.
