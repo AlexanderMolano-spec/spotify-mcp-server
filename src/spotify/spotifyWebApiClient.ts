@@ -117,6 +117,19 @@ type SpotifyPlaylistsResponse = {
   items: Array<SpotifyPlaylistSummary | null>;
 };
 
+type SpotifyPlaylistTracksResponse = {
+  href: string;
+  limit: number;
+  next: string | null;
+  offset: number;
+  previous: string | null;
+  total: number;
+  items: Array<{
+    added_at?: string | null;
+    track?: SpotifyTrackSummary | null;
+  }>;
+};
+
 type SpotifyPlaybackResponse = {
   device?: SpotifyDevice;
   repeat_state?: string;
@@ -131,6 +144,11 @@ type SpotifyPlaybackResponse = {
   is_playing?: boolean;
   item?: SpotifyTrackSummary | null;
   currently_playing_type?: string;
+};
+
+type SpotifyQueueResponse = {
+  currently_playing: SpotifyTrackSummary | null;
+  queue: SpotifyTrackSummary[];
 };
 
 type SpotifyFetchOptions = {
@@ -282,6 +300,20 @@ function assertSupportedSpotifyUri(uri: string) {
   }
 }
 
+function assertQueueableSpotifyUri(uri: string) {
+  if (!/^spotify:(track|episode):[^:]+$/.test(uri)) {
+    throw new SpotifyMcpError('SPOTIFY_INVALID_QUEUE_URI', 'Queue item must be a track or episode URI.', {
+      uri,
+      expected: 'spotify:track:<id> or spotify:episode:<id>',
+    });
+  }
+}
+
+function playlistIdFromUri(uri: string) {
+  const match = /^spotify:playlist:([^:]+)$/.exec(uri);
+  return match?.[1] ?? null;
+}
+
 function resolveDeviceByName(devices: ReturnType<typeof simplifyDevice>[], deviceName: string) {
   const normalized = deviceName.trim().toLowerCase();
   const matches = devices.filter((device) => device.name.trim().toLowerCase() === normalized);
@@ -328,6 +360,37 @@ function resolvePlaylistByName(playlists: ReturnType<typeof simplifyPlaylist>[],
       })),
     },
   );
+}
+
+async function resolvePlaylistId({
+  playlistId,
+  playlistUri,
+  playlistName,
+}: {
+  playlistId?: string;
+  playlistUri?: string;
+  playlistName?: string;
+}) {
+  if (playlistId) {
+    return { playlistId, playlist: null };
+  }
+
+  if (playlistUri) {
+    assertSupportedSpotifyUri(playlistUri);
+    const id = playlistIdFromUri(playlistUri);
+    if (!id) {
+      throw new SpotifyMcpError('SPOTIFY_INVALID_PLAYLIST_URI', 'Spotify URI is not a playlist URI.', { playlistUri });
+    }
+    return { playlistId: id, playlist: null };
+  }
+
+  if (playlistName) {
+    const { playlists } = await getCurrentUserPlaylists({ limit: 50, offset: 0, includeDetails: true });
+    const playlist = resolvePlaylistByName(playlists, playlistName);
+    return { playlistId: playlist.id, playlist };
+  }
+
+  throw new SpotifyMcpError('SPOTIFY_PLAYLIST_REQUIRED', 'Provide playlistId, playlistUri or playlistName.');
 }
 
 function simplifyPlayback(playback: SpotifyPlaybackResponse | null) {
@@ -488,6 +551,82 @@ export async function getCurrentTrack() {
   };
 }
 
+export async function getQueue({ limit = 10 }: { limit?: number } = {}) {
+  const response = await spotifyFetch<SpotifyQueueResponse>('/me/player/queue');
+  const queue = response.queue.slice(0, limit).map(simplifyTrack);
+
+  return {
+    currentlyPlaying: response.currently_playing ? simplifyTrack(response.currently_playing) : null,
+    nextTrack: queue[0] ?? null,
+    queue,
+    returned: queue.length,
+    totalAvailable: response.queue.length,
+  };
+}
+
+export async function getNextTrack() {
+  const queue = await getQueue({ limit: 1 });
+
+  return {
+    currentlyPlaying: queue.currentlyPlaying,
+    nextTrack: queue.nextTrack,
+    queueAvailable: queue.totalAvailable,
+  };
+}
+
+export async function getPlaylistTracks({
+  playlistId,
+  playlistUri,
+  playlistName,
+  limit = 20,
+  offset = 0,
+  includeDetails = false,
+}: {
+  playlistId?: string;
+  playlistUri?: string;
+  playlistName?: string;
+  limit?: number;
+  offset?: number;
+  includeDetails?: boolean;
+}) {
+  const resolved = await resolvePlaylistId({ playlistId, playlistUri, playlistName });
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    additional_types: 'track',
+    fields: 'href,limit,next,offset,previous,total,items(added_at,track(id,name,uri,duration_ms,explicit,external_urls,artists(id,name,uri,external_urls),album(id,name,uri,album_type,release_date,total_tracks,external_urls,images)))',
+  });
+  const response = await spotifyFetch<SpotifyPlaylistTracksResponse>(
+    `/playlists/${encodeURIComponent(resolved.playlistId)}/tracks?${params.toString()}`,
+  );
+
+  return {
+    playlistId: resolved.playlistId,
+    playlist: resolved.playlist,
+    href: response.href,
+    limit: response.limit,
+    next: response.next,
+    offset: response.offset,
+    previous: response.previous,
+    total: response.total,
+    tracks: response.items
+      .filter((item) => Boolean(item.track))
+      .map((item, index) => ({
+        position: response.offset + index,
+        addedAt: includeDetails ? (item.added_at ?? null) : null,
+        track: includeDetails
+          ? simplifyTrack(item.track as SpotifyTrackSummary)
+          : {
+              id: item.track?.id ?? null,
+              name: item.track?.name ?? null,
+              uri: item.track?.uri ?? null,
+              durationMs: item.track?.duration_ms ?? null,
+              artists: item.track?.artists?.map((artist) => artist.name) ?? [],
+            },
+      })),
+  };
+}
+
 export async function playSpotify({
   deviceId,
   uri,
@@ -566,6 +705,68 @@ export async function playSpotifySearch({
   };
 }
 
+export async function addToQueue({
+  uri,
+  query,
+  deviceId,
+  deviceName,
+}: {
+  uri?: string;
+  query?: string;
+  deviceId?: string;
+  deviceName?: string;
+}) {
+  let resolvedDeviceId = deviceId;
+  let resolvedDevice: ReturnType<typeof simplifyDevice> | null = null;
+
+  if (!resolvedDeviceId && deviceName) {
+    const { devices } = await getAvailableDevices();
+    resolvedDevice = resolveDeviceByName(devices, deviceName);
+    if (!resolvedDevice.id) {
+      throw new SpotifyMcpError('SPOTIFY_DEVICE_NOT_TRANSFERABLE', 'Matched Spotify device has no device id.', {
+        deviceName,
+        device: resolvedDevice,
+      });
+    }
+    resolvedDeviceId = resolvedDevice.id;
+  }
+
+  let resolvedUri = uri;
+  let track = null;
+
+  if (resolvedUri) {
+    assertQueueableSpotifyUri(resolvedUri);
+  } else if (query) {
+    const results = await searchSpotify({ query, types: ['track'], limit: 5 });
+    track = results.tracks[0] ?? null;
+    if (!track) {
+      throw new SpotifyMcpError('SPOTIFY_TRACK_NOT_FOUND', 'No Spotify track matched the search query.', { query });
+    }
+    resolvedUri = track.uri;
+  }
+
+  if (!resolvedUri) {
+    throw new SpotifyMcpError('SPOTIFY_QUEUE_ITEM_REQUIRED', 'Provide uri or query.');
+  }
+
+  const params = new URLSearchParams({ uri: resolvedUri });
+  if (resolvedDeviceId) {
+    params.set('device_id', resolvedDeviceId);
+  }
+
+  await spotifyCommand(`/me/player/queue?${params.toString()}`, { method: 'POST' });
+
+  return {
+    ok: true,
+    action: 'add_to_queue',
+    uri: resolvedUri,
+    query: query ?? null,
+    track,
+    deviceId: resolvedDeviceId ?? null,
+    device: resolvedDevice,
+  };
+}
+
 export async function playSpotifyPlaylist({
   playlistId,
   playlistUri,
@@ -596,25 +797,8 @@ export async function playSpotifyPlaylist({
     resolvedDeviceId = resolvedDevice.id;
   }
 
-  let resolvedPlaylist = null;
-  let uri = playlistUri;
-
-  if (uri) {
-    assertSupportedSpotifyUri(uri);
-    if (!uri.startsWith('spotify:playlist:')) {
-      throw new SpotifyMcpError('SPOTIFY_INVALID_PLAYLIST_URI', 'Spotify URI is not a playlist URI.', { uri });
-    }
-  } else if (playlistId) {
-    uri = `spotify:playlist:${playlistId}`;
-  } else if (playlistName) {
-    const { playlists } = await getCurrentUserPlaylists({ limit: 50, offset: 0, includeDetails: true });
-    resolvedPlaylist = resolvePlaylistByName(playlists, playlistName);
-    uri = resolvedPlaylist.uri;
-  }
-
-  if (!uri) {
-    throw new SpotifyMcpError('SPOTIFY_PLAYLIST_REQUIRED', 'Provide playlistId, playlistUri or playlistName.');
-  }
+  const resolvedPlaylist = await resolvePlaylistId({ playlistId, playlistUri, playlistName });
+  const uri = `spotify:playlist:${resolvedPlaylist.playlistId}`;
 
   await spotifyCommand(withDevice('/me/player/play', resolvedDeviceId), {
     method: 'PUT',
@@ -628,7 +812,7 @@ export async function playSpotifyPlaylist({
     ok: true,
     action: 'play_playlist',
     playlistUri: uri,
-    playlist: resolvedPlaylist,
+    playlist: resolvedPlaylist.playlist,
     deviceId: resolvedDeviceId ?? null,
     device: resolvedDevice,
     position: position ?? null,

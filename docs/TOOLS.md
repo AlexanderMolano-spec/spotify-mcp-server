@@ -129,6 +129,71 @@ Output:
 - `currentlyPlayingType`
 - `item`
 
+### `spotify_get_queue`
+
+Returns the current Spotify item and upcoming queue.
+
+Input:
+
+- `limit`: optional number from 1 to 50. Default 10.
+
+Required scopes:
+
+- `user-read-currently-playing`
+- `user-read-playback-state`
+
+Output:
+
+- `currentlyPlaying`
+- `nextTrack`
+- `queue`: compact list of queued items, limited by `limit`
+- `returned`
+- `totalAvailable`
+
+### `spotify_get_next_track`
+
+Returns the first upcoming Spotify queue item plus the current item. Prefer this
+compact tool when the user asks what song follows.
+
+Required scopes:
+
+- `user-read-currently-playing`
+- `user-read-playback-state`
+
+Output:
+
+- `currentlyPlaying`
+- `nextTrack`
+- `queueAvailable`
+
+### `spotify_get_playlist_tracks`
+
+Lists tracks from a Spotify playlist by current-user playlist name, exact
+playlist id or exact playlist URI.
+
+Input:
+
+- `playlistName`: optional exact visible playlist name from current-user
+  playlists.
+- `playlistId`: optional exact Spotify playlist id.
+- `playlistUri`: optional exact Spotify playlist URI.
+- `limit`: optional number from 1 to 50. Default 20.
+- `offset`: optional pagination offset. Default 0.
+- `includeDetails`: optional boolean. Default false keeps output compact by
+  returning only position, name, artists, duration and URI.
+
+Required scopes:
+
+- `playlist-read-private` when reading private playlists.
+
+Output:
+
+- `playlistId`
+- `playlist`
+- `tracks`: compact page by default; full track metadata only when
+  `includeDetails` is true
+- pagination fields: `total`, `limit`, `offset`, `next`, `previous`
+
 ### `spotify_play`
 
 Starts or resumes playback. It may optionally accept a device id, URI or context
@@ -199,6 +264,34 @@ Notes:
 - When a user names a device, call `spotify_get_devices`, match by visible
   `name`, then pass the matched `id` to this tool.
 - Spotify Premium is required.
+
+### `spotify_add_to_queue`
+
+Adds a track or episode to the user's current Spotify playback queue. The tool
+can receive an exact URI or search for the best matching track from a natural
+language query.
+
+Input:
+
+- `query`: optional song, artist or natural language search query.
+- `uri`: optional exact Spotify track or episode URI.
+- `deviceId`: optional Spotify Connect device id returned by
+  `spotify_get_devices`.
+- `deviceName`: optional exact visible device name. The tool resolves it to a
+  Spotify Connect device id.
+
+At least one of `query` or `uri` is required.
+
+Required scopes:
+
+- `user-modify-playback-state`
+- `user-read-playback-state` when resolving `deviceName`.
+
+Notes:
+
+- Spotify Premium is required.
+- Spotify does not guarantee execution order when queue commands are mixed with
+  other player commands.
 
 ### `spotify_play_playlist`
 

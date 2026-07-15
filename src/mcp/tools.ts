@@ -2,11 +2,15 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { toToolError } from '../spotify/errors.js';
 import {
+  addToQueue,
   getAvailableDevices,
   getCurrentTrack,
   getCurrentUserProfile,
   getCurrentUserPlaylists,
+  getNextTrack,
   getPlaybackState,
+  getPlaylistTracks,
+  getQueue,
   nextSpotify,
   pauseSpotify,
   playSpotifyPlaylist,
@@ -246,6 +250,118 @@ export function registerSpotifyTools(server: McpServer) {
   );
 
   server.registerTool(
+    'spotify_get_queue',
+    {
+      title: 'Get Spotify Queue',
+      description:
+        'Returns the current Spotify item and upcoming queue. Use this when the user asks what is next or what is in the queue.',
+      inputSchema: {
+        limit: z.number().int().min(1).max(50).default(10).describe('Maximum queued items to return.'),
+      },
+    },
+    async ({ limit }) => {
+      try {
+        const queue = await getQueue({ limit });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: queue.nextTrack
+                ? `Next Spotify item: ${queue.nextTrack.name}`
+                : 'Spotify queue has no next item available.',
+            },
+          ],
+          structuredContent: {
+            queue,
+          },
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_get_next_track',
+    {
+      title: 'Get Next Spotify Track',
+      description:
+        'Returns only the next Spotify queue item plus the current item. Prefer this for concise questions like "what song follows?".',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const next = await getNextTrack();
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: next.nextTrack
+                ? `Next Spotify item: ${next.nextTrack.name}`
+                : 'Spotify queue has no next item available.',
+            },
+          ],
+          structuredContent: {
+            next,
+          },
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_get_playlist_tracks',
+    {
+      title: 'Get Spotify Playlist Tracks',
+      description:
+        'Lists tracks from a Spotify playlist by current-user playlist name, exact playlist id or exact playlist URI. Returns a compact paginated page.',
+      inputSchema: {
+        playlistName: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Exact visible playlist name from the authenticated user playlists.'),
+        playlistId: z.string().min(1).optional().describe('Exact Spotify playlist id.'),
+        playlistUri: z.string().min(1).optional().describe('Exact Spotify playlist URI.'),
+        limit: z.number().int().min(1).max(50).default(20).describe('Maximum tracks to return.'),
+        offset: z.number().int().min(0).default(0).describe('Pagination offset.'),
+        includeDetails: z
+          .boolean()
+          .default(false)
+          .describe('When true, includes full track metadata. Default false keeps output compact.'),
+      },
+    },
+    async ({ playlistName, playlistId, playlistUri, limit, offset, includeDetails }) => {
+      try {
+        const result = await getPlaylistTracks({
+          playlistName,
+          playlistId,
+          playlistUri,
+          limit,
+          offset,
+          includeDetails,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Spotify playlist tracks ${result.offset + 1}-${result.offset + result.tracks.length} of ${result.total}`,
+            },
+          ],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
     'spotify_play',
     {
       title: 'Play Spotify',
@@ -304,6 +420,46 @@ export function registerSpotifyTools(server: McpServer) {
             {
               type: 'text',
               text: `Playing Spotify track: ${result.track.name}`,
+            },
+          ],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_add_to_queue',
+    {
+      title: 'Add Spotify Item to Queue',
+      description:
+        'Adds a track to the Spotify playback queue. Use query for natural language song requests, or uri when an exact track/episode URI is already known.',
+      inputSchema: {
+        query: z.string().min(1).optional().describe('Song, artist or natural language search query to add.'),
+        uri: z.string().min(1).optional().describe('Exact Spotify track or episode URI to add.'),
+        deviceId: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional Spotify Connect device id returned by spotify_get_devices.'),
+        deviceName: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional exact visible device name. The tool resolves it to a Spotify Connect device id.'),
+      },
+    },
+    async ({ query, uri, deviceId, deviceName }) => {
+      try {
+        const result = await addToQueue({ query, uri, deviceId, deviceName });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result.track ? `Added to Spotify queue: ${result.track.name}` : 'Added item to Spotify queue.',
             },
           ],
           structuredContent: result,

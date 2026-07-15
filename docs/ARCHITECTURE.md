@@ -115,12 +115,18 @@ Implemented read-only Spotify Web API calls:
 - `GET /v1/me/player` through `spotify_get_playback_state`.
 - `GET /v1/me/player/currently-playing` through
   `spotify_get_current_track`.
+- `GET /v1/me/player/queue` through `spotify_get_queue` and
+  `spotify_get_next_track`.
+- `GET /v1/playlists/{playlist_id}/tracks` through
+  `spotify_get_playlist_tracks`.
 
 Implemented playback Spotify Web API commands:
 
 - `PUT /v1/me/player/play` through `spotify_play`.
 - `GET /v1/search` + `PUT /v1/me/player/play` through
   `spotify_play_search`.
+- `GET /v1/search` + `POST /v1/me/player/queue` through
+  `spotify_add_to_queue`.
 - `GET /v1/me/playlists` + `PUT /v1/me/player/play` through
   `spotify_play_playlist`.
 - `PUT /v1/me/player` through `spotify_transfer_playback`.

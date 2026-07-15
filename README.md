@@ -102,8 +102,13 @@ The initial tool surface exposes:
 - `spotify_get_devices`: lists Spotify Connect devices.
 - `spotify_get_playback_state`: reads current playback state.
 - `spotify_get_current_track`: reads the current track or episode.
+- `spotify_get_queue`: reads the current item and upcoming queue.
+- `spotify_get_next_track`: reads the next queued item only.
+- `spotify_get_playlist_tracks`: lists tracks from a playlist.
 - `spotify_play`: starts or resumes playback.
 - `spotify_play_search`: searches a track and plays the best match.
+- `spotify_add_to_queue`: searches or receives a URI and adds a track to the
+  playback queue.
 - `spotify_play_playlist`: starts playback from a current-user playlist or exact
   playlist URI/id.
 - `spotify_transfer_playback`: transfers playback to another Spotify Connect
