@@ -68,5 +68,5 @@ Check status:
 curl http://localhost:11070/auth/status
 ```
 
-The first OAuth milestone only stores and reports token status. Spotify API
-tools are added in later milestones.
+When authenticated, the MCP tools use the local token store and refresh tokens
+automatically when needed.

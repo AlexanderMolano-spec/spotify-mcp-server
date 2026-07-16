@@ -58,3 +58,14 @@ Playlist write scopes are intentionally deferred.
   authorization error.
 - New write scopes should be added only when a tool needs them.
 - Tools must not silently request broader permissions than documented.
+
+## Local And Delegated Modes
+
+In `local-token` mode, `SPOTIFY_SCOPES` controls the scopes requested during the
+local OAuth login flow.
+
+In planned `delegated-token` mode, the host backend is responsible for
+requesting and refreshing scopes. The MCP server should validate that the
+delegated token can perform the requested operation and return an explicit
+authorization error when Spotify rejects the call for missing or invalid
+permissions.

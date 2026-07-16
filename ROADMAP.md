@@ -30,6 +30,8 @@ account.
 
 Goal: let host agents manage identity and tokens.
 
+- Introduce an authentication provider abstraction shared by local and
+  delegated modes.
 - Accept delegated access tokens from an upstream agent backend.
 - Avoid local token persistence in this mode.
 - Document integration pattern for multi-user AI agents.

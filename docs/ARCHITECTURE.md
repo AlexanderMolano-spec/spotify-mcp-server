@@ -26,6 +26,19 @@ spotify-mcp-server
 Spotify
 ```
 
+## Authentication Strategy
+
+The server has a hybrid authentication direction:
+
+- `local-token`: the MCP server owns the local OAuth flow and reads/writes one
+  token file for one Spotify account.
+- `delegated-token`: a host backend owns identity, OAuth, token encryption and
+  refresh, then delegates a valid Spotify access token to the MCP server for
+  tool execution.
+
+`local-token` is the current supported runtime. `delegated-token` is the planned
+integration mode for multi-user agent backends.
+
 ## HTTP Surface
 
 | Route | Purpose |
@@ -41,7 +54,7 @@ Spotify
 | `DELETE /mcp` | Session termination for an initialized MCP session. |
 
 The MCP endpoint uses in-memory session tracking for the local server process.
-This is enough for the local single-user runtime. External token mode and any
+This is enough for the local single-user runtime. Delegated token mode and any
 future horizontally scaled deployment will require a deliberate session strategy.
 
 Spotify requires HTTPS redirect URIs except for loopback IP literals. For local
@@ -50,9 +63,9 @@ valid Spotify redirect URI.
 
 ## Modes
 
-### Single-User Local Mode
+### `local-token` Mode
 
-This is the first supported mode.
+This is the current supported mode.
 
 - The user creates a Spotify Developer application.
 - The user authenticates through Authorization Code OAuth.
@@ -62,9 +75,9 @@ This is the first supported mode.
 
 This mode is useful for local agents, demos and personal automation.
 
-### External Token Mode
+### `delegated-token` Mode
 
-This mode is planned for agent backends.
+This mode is planned for host agent backends.
 
 - The MCP server does not persist Spotify tokens.
 - The host application owns OAuth, encryption and user identity.
@@ -72,7 +85,9 @@ This mode is planned for agent backends.
   session.
 - The MCP server validates scopes and executes the requested tool.
 
-This mode is better for multi-user systems.
+This mode is the preferred shape for multi-user systems. The MCP server should
+remain a Spotify tool runtime, not a credential database or user management
+service.
 
 ## Component Responsibilities
 
@@ -90,7 +105,7 @@ This mode is better for multi-user systems.
 - Handle OAuth callback.
 - Exchange authorization code for tokens.
 - Refresh access tokens.
-- Store tokens only in local mode.
+- Store tokens only in `local-token` mode.
 
 The current implementation supports authorization URL generation, callback
 handling, token exchange, local token persistence and access token refresh.
@@ -105,6 +120,8 @@ within the same server process.
 - Attach bearer tokens.
 - Handle Spotify error responses.
 - Keep endpoint-specific behavior out of MCP tool handlers.
+- Receive access tokens through an authentication provider abstraction so local
+  and delegated modes can share the same Spotify API behavior.
 
 Implemented read-only Spotify Web API calls:
 
@@ -147,6 +164,7 @@ device.
 ## Non-Goals For v0.1.0
 
 - Multi-user token storage.
+- Host application user management.
 - Payments or commerce.
 - Browser automation.
 - Bypassing CAPTCHAs or platform safety systems.
@@ -160,3 +178,4 @@ device.
 - Document scopes per tool.
 - Prefer explicit user authorization over hidden automation.
 - Treat playback actions as user-visible side effects.
+- Do not persist delegated access tokens.

@@ -148,6 +148,17 @@ See [Local Spotify OAuth Setup](docs/OAUTH_LOCAL_SETUP.md).
 Access tokens are refreshed automatically when they are expired or close to
 expiration.
 
+## Authentication Modes
+
+The default runtime is `local-token`: one local Spotify account authorizes this
+server through `/auth/login`, and the server stores that local development token
+at `SPOTIFY_TOKEN_STORE_PATH`.
+
+The planned backend integration runtime is `delegated-token`: a host
+application owns user identity, OAuth, encryption and refresh, then delegates a
+valid Spotify access token to the MCP server for tool execution. In that mode,
+the MCP server must not persist delegated user tokens.
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
