@@ -36,8 +36,9 @@ The server has a hybrid authentication direction:
   refresh, then delegates a valid Spotify access token to the MCP server for
   tool execution.
 
-`local-token` is the current supported runtime. `delegated-token` is the planned
-integration mode for multi-user agent backends.
+`local-token` is the current supported runtime and default authentication
+provider. `delegated-token` is the planned integration mode for multi-user agent
+backends.
 
 ## HTTP Surface
 
@@ -122,6 +123,9 @@ within the same server process.
 - Keep endpoint-specific behavior out of MCP tool handlers.
 - Receive access tokens through an authentication provider abstraction so local
   and delegated modes can share the same Spotify API behavior.
+
+The current provider implementation is `local-token`; it reads the local token
+store and refreshes tokens through the OAuth module when needed.
 
 Implemented read-only Spotify Web API calls:
 

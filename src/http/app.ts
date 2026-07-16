@@ -1,6 +1,6 @@
 import express from 'express';
 import { createAuthRouter } from '../spotify/auth.routes.js';
-import { getTokenStatus } from '../spotify/tokenStore.js';
+import { getSpotifyAuthStatus } from '../spotify/authProvider.js';
 import {
   createMcpDeleteHandler,
   createMcpGetHandler,
@@ -14,7 +14,7 @@ export function createHttpApp() {
 
   app.get('/health', async (_req, res, next) => {
     try {
-      const auth = await getTokenStatus();
+      const auth = await getSpotifyAuthStatus();
 
       res.status(200).json({
         ok: true,
@@ -30,7 +30,7 @@ export function createHttpApp() {
 
   app.get('/ready', async (_req, res, next) => {
     try {
-      const auth = await getTokenStatus();
+      const auth = await getSpotifyAuthStatus();
 
       res.status(auth.authenticated ? 200 : 503).json({
         ok: auth.authenticated,

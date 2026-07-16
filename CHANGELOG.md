@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Internal Spotify authentication provider abstraction. Local token storage
+  remains the default provider.
 - Playback transfer and device-aware playback helpers:
   - `spotify_get_devices`
   - `spotify_transfer_playback`

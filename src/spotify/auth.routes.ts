@@ -5,7 +5,8 @@ import {
   exchangeAuthorizationCode,
 } from './spotifyAccountsClient.js';
 import { consumeOAuthState, createOAuthState } from './oauthState.js';
-import { getTokenStatus, saveToken } from './tokenStore.js';
+import { getSpotifyAuthStatus } from './authProvider.js';
+import { saveToken } from './tokenStore.js';
 
 export function createAuthRouter() {
   const router = Router();
@@ -69,7 +70,7 @@ export function createAuthRouter() {
       res.status(200).json({
         ok: true,
         message: 'Spotify authorization completed. You can close this tab.',
-        auth: await getTokenStatus(),
+        auth: await getSpotifyAuthStatus(),
       });
     } catch (callbackError) {
       next(callbackError);
@@ -80,7 +81,7 @@ export function createAuthRouter() {
     try {
       res.status(200).json({
         ok: true,
-        auth: await getTokenStatus(),
+        auth: await getSpotifyAuthStatus(),
       });
     } catch (statusError) {
       next(statusError);

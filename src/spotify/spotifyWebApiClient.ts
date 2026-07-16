@@ -1,5 +1,5 @@
 import { SpotifyMcpError } from './errors.js';
-import { getValidAccessToken } from './tokenStore.js';
+import { getSpotifyAccessToken } from './authProvider.js';
 
 const SPOTIFY_API_BASE_URL = 'https://api.spotify.com/v1';
 
@@ -163,7 +163,7 @@ async function spotifyFetch<T>(
   options: SpotifyFetchOptions & { allowNoContent: true },
 ): Promise<T | null>;
 async function spotifyFetch<T>(path: string, options?: SpotifyFetchOptions) {
-  const accessToken = await getValidAccessToken();
+  const accessToken = await getSpotifyAccessToken();
   const body = options?.body;
   const response = await fetch(`${SPOTIFY_API_BASE_URL}${path}`, {
     method: options?.method ?? 'GET',
