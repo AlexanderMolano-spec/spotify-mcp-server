@@ -177,6 +177,26 @@ async function spotifyFetch<T>(path: string, options?: SpotifyFetchOptions) {
   const responseBody = await response.text();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new SpotifyMcpError('SPOTIFY_AUTH_INVALID', 'Spotify access token is invalid or expired.', {
+        status: response.status,
+        body: responseBody,
+        path,
+      });
+    }
+
+    if (response.status === 403) {
+      throw new SpotifyMcpError(
+        'SPOTIFY_SCOPE_REQUIRED',
+        'Spotify rejected the request. The token may be missing a required scope or the account/device may not allow this action.',
+        {
+          status: response.status,
+          body: responseBody,
+          path,
+        },
+      );
+    }
+
     throw new SpotifyMcpError('SPOTIFY_API_ERROR', 'Spotify Web API request failed.', {
       status: response.status,
       body: responseBody,

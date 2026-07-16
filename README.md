@@ -159,9 +159,12 @@ application owns user identity, OAuth, encryption and refresh, then delegates a
 valid Spotify access token to the MCP server for tool execution. In that mode,
 the MCP server must not persist delegated user tokens.
 
+See [Delegated Token Mode](docs/DELEGATED_TOKEN_MODE.md) for the HTTP contract.
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Delegated Token Mode](docs/DELEGATED_TOKEN_MODE.md)
 - [Local Spotify OAuth Setup](docs/OAUTH_LOCAL_SETUP.md)
 - [Spotify Scopes](docs/SPOTIFY_SCOPES.md)
 - [Tool Contract](docs/TOOLS.md)

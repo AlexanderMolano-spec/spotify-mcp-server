@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Delegated Spotify token mode for Streamable HTTP MCP requests through
+  `x-spotify-access-token`.
+- Clear Spotify authorization errors for invalid/expired access tokens and
+  missing scopes.
 - Internal Spotify authentication provider abstraction. Local token storage
   remains the default provider.
 - Playback transfer and device-aware playback helpers:

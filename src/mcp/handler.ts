@@ -3,9 +3,11 @@ import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createSpotifyMcpServer } from './server.js';
+import { withSpotifyAuthContext } from '../spotify/authProvider.js';
 
 type Session = {
   transport: StreamableHTTPServerTransport;
+  delegatedAccessToken?: string;
 };
 
 const sessions = new Map<string, Session>();
@@ -13,6 +15,20 @@ const sessions = new Map<string, Session>();
 function getSessionId(req: Parameters<RequestHandler>[0]) {
   const value = req.headers['mcp-session-id'];
   return Array.isArray(value) ? value[0] : value;
+}
+
+function getDelegatedAccessToken(req: Parameters<RequestHandler>[0]) {
+  const value = req.headers['x-spotify-access-token'];
+  const header = Array.isArray(value) ? value[0] : value;
+
+  if (!header) return undefined;
+
+  const trimmed = header.trim();
+  if (!trimmed) return undefined;
+
+  return trimmed.toLowerCase().startsWith('bearer ')
+    ? trimmed.slice(7).trim()
+    : trimmed;
 }
 
 function sendMcpError(
@@ -34,6 +50,7 @@ function sendMcpError(
 export function createMcpPostHandler(): RequestHandler {
   return async (req, res) => {
     const sessionId = getSessionId(req);
+    const delegatedAccessToken = getDelegatedAccessToken(req);
 
     try {
       if (sessionId) {
@@ -44,7 +61,14 @@ export function createMcpPostHandler(): RequestHandler {
           return;
         }
 
-        await session.transport.handleRequest(req, res, req.body);
+        if (delegatedAccessToken) {
+          session.delegatedAccessToken = delegatedAccessToken;
+        }
+
+        await withSpotifyAuthContext(
+          { delegatedAccessToken: session.delegatedAccessToken },
+          () => session.transport.handleRequest(req, res, req.body),
+        );
         return;
       }
 
@@ -59,7 +83,7 @@ export function createMcpPostHandler(): RequestHandler {
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (newSessionId) => {
-          sessions.set(newSessionId, { transport });
+          sessions.set(newSessionId, { transport, delegatedAccessToken });
         },
         onsessionclosed: (closedSessionId) => {
           sessions.delete(closedSessionId);
@@ -75,7 +99,10 @@ export function createMcpPostHandler(): RequestHandler {
       };
 
       await server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
+      await withSpotifyAuthContext(
+        { delegatedAccessToken },
+        () => transport.handleRequest(req, res, req.body),
+      );
     } catch (error) {
       console.error('MCP request failed', error);
 
@@ -109,7 +136,10 @@ export function createMcpGetHandler(): RequestHandler {
       return;
     }
 
-    await session.transport.handleRequest(req, res);
+    await withSpotifyAuthContext(
+      { delegatedAccessToken: session.delegatedAccessToken },
+      () => session.transport.handleRequest(req, res),
+    );
   };
 }
 

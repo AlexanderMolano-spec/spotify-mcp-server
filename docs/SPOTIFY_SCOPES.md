@@ -64,8 +64,7 @@ Playlist write scopes are intentionally deferred.
 In `local-token` mode, `SPOTIFY_SCOPES` controls the scopes requested during the
 local OAuth login flow.
 
-In planned `delegated-token` mode, the host backend is responsible for
-requesting and refreshing scopes. The MCP server should validate that the
-delegated token can perform the requested operation and return an explicit
-authorization error when Spotify rejects the call for missing or invalid
-permissions.
+In `delegated-token` mode, the host backend is responsible for requesting and
+refreshing scopes. The MCP server validates behavior at execution time by
+calling Spotify with the delegated token and returning an explicit authorization
+error when Spotify rejects the call for missing or invalid permissions.

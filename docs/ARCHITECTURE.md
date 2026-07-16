@@ -34,11 +34,10 @@ The server has a hybrid authentication direction:
   token file for one Spotify account.
 - `delegated-token`: a host backend owns identity, OAuth, token encryption and
   refresh, then delegates a valid Spotify access token to the MCP server for
-  tool execution.
+  tool execution through `x-spotify-access-token`.
 
-`local-token` is the current supported runtime and default authentication
-provider. `delegated-token` is the planned integration mode for multi-user agent
-backends.
+`local-token` is the default authentication provider. `delegated-token` is the
+integration mode for multi-user agent backends.
 
 ## HTTP Surface
 
@@ -82,9 +81,10 @@ This mode is planned for host agent backends.
 
 - The MCP server does not persist Spotify tokens.
 - The host application owns OAuth, encryption and user identity.
-- The host application passes a valid Spotify access token per request or
-  session.
+- The host application passes a valid Spotify access token per request or MCP
+  session with `x-spotify-access-token`.
 - The MCP server validates scopes and executes the requested tool.
+- Delegated tokens are kept only in memory for the active MCP session.
 
 This mode is the preferred shape for multi-user systems. The MCP server should
 remain a Spotify tool runtime, not a credential database or user management
