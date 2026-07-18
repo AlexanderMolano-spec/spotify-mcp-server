@@ -107,6 +107,7 @@ The initial tool surface exposes:
 - `spotify_get_queue`: reads the current item and upcoming queue.
 - `spotify_get_next_track`: reads the next queued item only.
 - `spotify_get_playlist_tracks`: lists tracks from a playlist.
+- `spotify_get_album_tracks`: lists tracks from an album.
 - `spotify_play`: starts or resumes playback.
 - `spotify_play_search`: searches a track and plays the best match.
 - `spotify_add_to_queue`: searches or receives a URI and adds a track to the

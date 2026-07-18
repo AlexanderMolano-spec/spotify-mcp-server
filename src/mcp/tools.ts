@@ -7,6 +7,7 @@ import {
   getCurrentTrack,
   getCurrentUserProfile,
   getCurrentUserPlaylists,
+  getAlbumTracks,
   getNextTrack,
   getPlaybackState,
   getPlaylistTracks,
@@ -61,6 +62,21 @@ function playlistTracksText(result: {
   });
 
   return [`Spotify playlist tracks ${start}-${end} of ${result.total}:`, ...lines].join('\n');
+}
+
+function albumTracksText(result: {
+  offset: number;
+  total: number;
+  tracks: Array<{ position: number; track?: { name?: string | null; artists?: Array<string | { name?: string | null }> } }>;
+}) {
+  const start = result.offset + 1;
+  const end = result.offset + result.tracks.length;
+  const lines = result.tracks.map((item) => {
+    const displayPosition = item.position + 1;
+    return `${displayPosition}. ${trackName(item.track)} - ${artistNames(item.track)}`;
+  });
+
+  return [`Spotify album tracks ${start}-${end} of ${result.total}:`, ...lines].join('\n');
 }
 
 function queueText(result: {
@@ -403,6 +419,48 @@ export function registerSpotifyTools(server: McpServer) {
             {
               type: 'text',
               text: playlistTracksText(result),
+            },
+          ],
+          structuredContent: result,
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'spotify_get_album_tracks',
+    {
+      title: 'Get Spotify Album Tracks',
+      description:
+        'Lists tracks from a Spotify album by exact album id or exact album URI. Use this for album results returned by spotify_search; do not use playlist tools for albums.',
+      inputSchema: {
+        albumId: z.string().min(1).optional().describe('Exact Spotify album id.'),
+        albumUri: z.string().min(1).optional().describe('Exact Spotify album URI.'),
+        limit: z.number().int().min(1).max(50).default(20).describe('Maximum tracks to return.'),
+        offset: z.number().int().min(0).default(0).describe('Pagination offset.'),
+        includeDetails: z
+          .boolean()
+          .default(false)
+          .describe('When true, includes full track metadata. Default false keeps output compact.'),
+      },
+    },
+    async ({ albumId, albumUri, limit, offset, includeDetails }) => {
+      try {
+        const result = await getAlbumTracks({
+          albumId,
+          albumUri,
+          limit,
+          offset,
+          includeDetails,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: albumTracksText(result),
             },
           ],
           structuredContent: result,

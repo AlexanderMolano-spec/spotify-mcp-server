@@ -196,6 +196,38 @@ Output:
   `includeDetails` is true
 - pagination fields: `total`, `limit`, `offset`, `next`, `previous`
 
+### `spotify_get_album_tracks`
+
+Lists tracks from a Spotify album by exact album id or exact album URI.
+
+Input:
+
+- `albumId`: optional exact Spotify album id.
+- `albumUri`: optional exact Spotify album URI.
+- `limit`: optional number from 1 to 50. Default 20.
+- `offset`: optional pagination offset. Default 0.
+- `includeDetails`: optional boolean. Default false keeps output compact by
+  returning only position, name, artists, duration and URI.
+
+At least one of `albumId` or `albumUri` is required.
+
+Required scopes:
+
+- None beyond a valid Spotify access token for public catalog albums.
+
+Output:
+
+- `albumId`
+- `tracks`: compact page by default; full track metadata only when
+  `includeDetails` is true
+- pagination fields: `total`, `limit`, `offset`, `next`, `previous`
+
+Notes:
+
+- Use this tool for album results returned by `spotify_search`.
+- Do not pass album ids or album URIs to playlist tools. Spotify exposes album
+  tracks and playlist tracks through different API resources.
+
 ### `spotify_play`
 
 Starts or resumes playback. It may optionally accept a device id, URI or context

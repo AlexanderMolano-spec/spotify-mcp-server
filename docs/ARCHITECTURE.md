@@ -140,6 +140,7 @@ Implemented read-only Spotify Web API calls:
   `spotify_get_next_track`.
 - `GET /v1/playlists/{playlist_id}/tracks` through
   `spotify_get_playlist_tracks`.
+- `GET /v1/albums/{album_id}/tracks` through `spotify_get_album_tracks`.
 
 Implemented playback Spotify Web API commands:
 

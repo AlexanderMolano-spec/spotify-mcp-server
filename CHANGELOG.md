@@ -17,6 +17,8 @@
   - `spotify_get_playlists`
   - `spotify_get_playlist_tracks`
   - `spotify_play_playlist`
+- Album track listing tool:
+  - `spotify_get_album_tracks`
 - Compact agent-friendly text output for queue and playlist track tools.
 - Compact `SPOTIFY_PLAYLIST_NOT_FOUND` guidance when a requested playlist is
   not part of the authenticated user's library.

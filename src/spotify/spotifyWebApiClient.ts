@@ -130,6 +130,16 @@ type SpotifyPlaylistTracksResponse = {
   }>;
 };
 
+type SpotifyAlbumTracksResponse = {
+  href: string;
+  limit: number;
+  next: string | null;
+  offset: number;
+  previous: string | null;
+  total: number;
+  items: SpotifyTrackSummary[];
+};
+
 type SpotifyPlaybackResponse = {
   device?: SpotifyDevice;
   repeat_state?: string;
@@ -341,6 +351,11 @@ function assertQueueableSpotifyUri(uri: string) {
 
 function playlistIdFromUri(uri: string) {
   const match = /^spotify:playlist:([^:]+)$/.exec(uri);
+  return match?.[1] ?? null;
+}
+
+function albumIdFromUri(uri: string) {
+  const match = /^spotify:album:([^:]+)$/.exec(uri);
   return match?.[1] ?? null;
 }
 
@@ -660,6 +675,64 @@ export async function getPlaylistTracks({
         addedAt: includeDetails ? (item.added_at ?? null) : null,
         track: includeDetails ? simplifyTrack(item.track as SpotifyTrackSummary) : compactTrack(item.track as SpotifyTrackSummary),
       })),
+  };
+}
+
+export async function getAlbumTracks({
+  albumId,
+  albumUri,
+  limit = 20,
+  offset = 0,
+  includeDetails = false,
+}: {
+  albumId?: string;
+  albumUri?: string;
+  limit?: number;
+  offset?: number;
+  includeDetails?: boolean;
+}) {
+  let resolvedAlbumId = albumId;
+
+  if (resolvedAlbumId?.startsWith('spotify:')) {
+    assertSupportedSpotifyUri(resolvedAlbumId);
+    resolvedAlbumId = albumIdFromUri(resolvedAlbumId) ?? undefined;
+    if (!resolvedAlbumId) {
+      throw new SpotifyMcpError('SPOTIFY_INVALID_ALBUM_URI', 'Spotify URI is not an album URI.', { albumId });
+    }
+  }
+
+  if (!resolvedAlbumId && albumUri) {
+    assertSupportedSpotifyUri(albumUri);
+    resolvedAlbumId = albumIdFromUri(albumUri) ?? undefined;
+    if (!resolvedAlbumId) {
+      throw new SpotifyMcpError('SPOTIFY_INVALID_ALBUM_URI', 'Spotify URI is not an album URI.', { albumUri });
+    }
+  }
+
+  if (!resolvedAlbumId) {
+    throw new SpotifyMcpError('SPOTIFY_ALBUM_REQUIRED', 'Provide albumId or albumUri.');
+  }
+
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const response = await spotifyFetch<SpotifyAlbumTracksResponse>(
+    `/albums/${encodeURIComponent(resolvedAlbumId)}/tracks?${params.toString()}`,
+  );
+
+  return {
+    albumId: resolvedAlbumId,
+    href: response.href,
+    limit: response.limit,
+    next: response.next,
+    offset: response.offset,
+    previous: response.previous,
+    total: response.total,
+    tracks: response.items.map((track, index) => ({
+      position: response.offset + index,
+      track: includeDetails ? simplifyTrack(track) : compactTrack(track),
+    })),
   };
 }
 
