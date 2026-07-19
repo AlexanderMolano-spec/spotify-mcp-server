@@ -35,7 +35,7 @@ available Spotify Connect device.
 Playlist write tools should be introduced after read-only and playback tools
 are stable.
 
-## Initial v0.1 Scope Set
+## v1.0 Scope Set
 
 For the first implementation, use:
 

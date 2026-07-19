@@ -8,8 +8,8 @@ capabilities as Model Context Protocol tools over Streamable HTTP.
 - Use the official Spotify Web API.
 - Avoid browser automation for Spotify.
 - Keep authentication explicit and auditable.
-- Support a simple single-user local mode first.
-- Leave a clear path to multi-user agent backends.
+- Support a simple single-user local mode.
+- Support multi-user host backends through delegated access tokens.
 - Keep the MCP server independent from any specific agent application.
 
 ## Runtime Shape
@@ -28,7 +28,7 @@ Spotify
 
 ## Authentication Strategy
 
-The server has a hybrid authentication direction:
+The server has a hybrid authentication strategy:
 
 - `local-token`: the MCP server owns the local OAuth flow and reads/writes one
   token file for one Spotify account.
@@ -65,7 +65,7 @@ valid Spotify redirect URI.
 
 ### `local-token` Mode
 
-This is the current supported mode.
+This mode is supported for local personal agents and demos.
 
 - The user creates a Spotify Developer application.
 - The user authenticates through Authorization Code OAuth.
@@ -77,7 +77,7 @@ This mode is useful for local agents, demos and personal automation.
 
 ### `delegated-token` Mode
 
-This mode is planned for host agent backends.
+This mode is supported for host agent backends.
 
 - The MCP server does not persist Spotify tokens.
 - The host application owns OAuth, encryption and user identity.
@@ -108,8 +108,8 @@ service.
 - Refresh access tokens.
 - Store tokens only in `local-token` mode.
 
-The current implementation supports authorization URL generation, callback
-handling, token exchange, local token persistence and access token refresh.
+The implementation supports authorization URL generation, callback handling,
+token exchange, local token persistence and access token refresh.
 
 OAuth login also includes an in-memory `state` value with a short TTL. This is
 appropriate for local single-user mode because the login and callback happen
@@ -124,8 +124,10 @@ within the same server process.
 - Receive access tokens through an authentication provider abstraction so local
   and delegated modes can share the same Spotify API behavior.
 
-The current provider implementation is `local-token`; it reads the local token
-store and refreshes tokens through the OAuth module when needed.
+The provider layer supports `local-token` and `delegated-token`. Local mode reads
+the local token store and refreshes tokens through the OAuth module when needed;
+delegated mode uses the access token passed by the host backend without writing
+it to disk.
 
 Implemented read-only Spotify Web API calls:
 
@@ -166,9 +168,9 @@ device.
 - Associate tools with required scopes.
 - Keep tool outputs stable across releases.
 
-## Non-Goals For v0.1.0
+## Non-Goals For v1.0.0
 
-- Multi-user token storage.
+- Multi-user token storage inside the MCP server.
 - Host application user management.
 - Payments or commerce.
 - Browser automation.

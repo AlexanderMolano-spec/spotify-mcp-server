@@ -3,7 +3,7 @@
 This document defines the intended tool surface. Tool names and outputs should
 remain stable once released.
 
-## v0.1 Tools
+## v1.0 Tools
 
 ### `spotify_ping`
 

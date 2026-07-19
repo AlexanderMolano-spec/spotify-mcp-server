@@ -1,6 +1,6 @@
 {
   "name": "spotify-mcp-server",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Streamable HTTP MCP server for Spotify Web API integrations.",
   "type": "module",
   "private": false,

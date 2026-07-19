@@ -6,10 +6,9 @@ and control music through the official Spotify Web API.
 
 ## Status
 
-Active early release. The project currently supports a local single-user
-Spotify OAuth flow, Docker-based runtime, Streamable HTTP MCP transport and a
-practical playback/read-only tool surface. The public contract is still
-evolving, so review the changelog before upgrading.
+Stable v1.0.0 release. The project supports local single-user OAuth, delegated
+access-token mode for host backends, Docker-based runtime, Streamable HTTP MCP
+transport and a practical playback/read-only Spotify tool surface.
 
 ## Goals
 
@@ -19,21 +18,23 @@ evolving, so review the changelog before upgrading.
 - Keep the project reusable by different MCP clients.
 - Provide a future path for multi-user agent backends.
 
-## Initial Scope
+## Stable Scope
 
-The first stable version will focus on:
+v1.0.0 includes:
 
 - Streamable HTTP MCP transport.
 - Local single-user Spotify OAuth.
-- Automatic access token refresh.
+- Delegated token mode for host backends via `x-spotify-access-token`.
+- Automatic access token refresh for local OAuth tokens.
 - Profile, search, devices and playback state tools.
 - Current-user playlist listing and playlist playback tools.
 - Basic playback control tools, including playback transfer between Spotify
   Connect devices.
 - Docker-based runtime.
 
-Playlist write operations and delegated/external token mode are planned after
-the local single-user flow is stable.
+Playlist write operations remain out of scope for v1.0.0. Host backends should
+manage users, OAuth, encryption and refresh, then delegate access tokens to this
+MCP server.
 
 ## Requirements
 
@@ -94,7 +95,7 @@ MCP endpoint:
 http://localhost:11070/mcp
 ```
 
-The initial tool surface exposes:
+The v1.0 tool surface exposes:
 
 - `spotify_ping`: validates MCP transport without calling Spotify.
 - `spotify_get_profile`: calls Spotify Web API `/me` using the local OAuth
@@ -155,10 +156,10 @@ The default runtime is `local-token`: one local Spotify account authorizes this
 server through `/auth/login`, and the server stores that local development token
 at `SPOTIFY_TOKEN_STORE_PATH`.
 
-The planned backend integration runtime is `delegated-token`: a host
-application owns user identity, OAuth, encryption and refresh, then delegates a
-valid Spotify access token to the MCP server for tool execution. In that mode,
-the MCP server must not persist delegated user tokens.
+The backend integration runtime is `delegated-token`: a host application owns
+user identity, OAuth, encryption and refresh, then delegates a valid Spotify
+access token to the MCP server for tool execution. In that mode, the MCP server
+does not persist delegated user tokens.
 
 See [Delegated Token Mode](docs/DELEGATED_TOKEN_MODE.md) for the HTTP contract.
 
@@ -182,7 +183,7 @@ are implemented.
 
 The default OAuth/token store is intended for local single-user use. Multi-user
 agent backends should own user identity, token encryption and refresh outside of
-this MCP server, then integrate through the planned delegated token mode.
+this MCP server, then integrate through delegated token mode.
 
 ## License
 

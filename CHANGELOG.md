@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- No unreleased changes.
+
+## [1.0.0] - 2026-07-19
+
 - Delegated Spotify token mode for Streamable HTTP MCP requests through
   `x-spotify-access-token`.
 - Clear Spotify authorization errors for invalid/expired access tokens and
@@ -54,8 +58,8 @@
 - Docker context hygiene with `.dockerignore`.
 - Build, start and typecheck scripts.
 - Initial project documentation.
-- Architecture notes for local single-user mode and future external token mode.
+- Architecture notes for local single-user mode and delegated token mode.
 - Initial Spotify scope policy.
 - Initial MCP tool contract.
-- Roadmap for v0.1.0 through external token mode.
+- Roadmap for v1.0.0 and follow-up Spotify tool work.
 - Environment example and git ignore rules for local development.
