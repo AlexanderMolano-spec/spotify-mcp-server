@@ -31,5 +31,17 @@
     "@types/node": "^24.0.14",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "ROADMAP.md",
+    "LICENSE",
+    "Dockerfile",
+    "docker-compose.example.yml",
+    ".env.example"
+  ]
 }

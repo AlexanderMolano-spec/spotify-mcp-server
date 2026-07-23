@@ -21,12 +21,12 @@ backends that delegate Spotify access tokens.
 - Album track listing for public album resources.
 - Playback transfer between Spotify Connect devices.
 
-## v1.1.0 - Playlist Operations
+## v1.1.0 - Playlist Write Operations
 
 - Create playlists.
 - Add tracks to playlists.
 - Remove tracks from playlists.
-- Read user playlists.
+- Update playlist metadata where Spotify scopes allow it.
 - Safer confirmations for destructive or bulk operations.
 
 ## Future

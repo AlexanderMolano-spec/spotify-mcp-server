@@ -1,55 +1,47 @@
 # Spotify MCP Server
 
-Spotify MCP Server for AI agents: a Streamable HTTP Model Context Protocol
-server that lets agents search Spotify, inspect playback state, manage devices
-and control music through the official Spotify Web API.
+A Streamable HTTP Model Context Protocol (MCP) server for Spotify Web API
+integrations. It gives AI agents a clean tool surface for Spotify search,
+playback state, devices, queue inspection, playlist playback and basic playback
+control without browser automation.
 
 ## Status
 
-Stable v1.0.0 release. The project supports local single-user OAuth, delegated
-access-token mode for host backends, Docker-based runtime, Streamable HTTP MCP
-transport and a practical playback/read-only Spotify tool surface.
+Stable `v1.0.0` release.
 
-## Goals
+This project supports two authentication modes:
 
-- Expose Spotify Web API capabilities as MCP tools.
-- Use official OAuth instead of browser automation.
-- Support local personal agents first.
-- Keep the project reusable by different MCP clients.
-- Provide a future path for multi-user agent backends.
+- `local-token`: local single-user OAuth for personal agents, demos and local
+  development.
+- `delegated-token`: host backends manage users, OAuth, refresh and encryption,
+  then delegate a Spotify access token to this MCP server per request/session.
 
-## Stable Scope
+The server is intentionally a Spotify tool runtime. It does not manage host
+users, persist delegated tokens or store multi-user credentials.
 
-v1.0.0 includes:
+## Features
 
 - Streamable HTTP MCP transport.
-- Local single-user Spotify OAuth.
-- Delegated token mode for host backends via `x-spotify-access-token`.
-- Automatic access token refresh for local OAuth tokens.
-- Profile, search, devices and playback state tools.
-- Current-user playlist listing and playlist playback tools.
-- Basic playback control tools, including playback transfer between Spotify
-  Connect devices.
-- Docker-based runtime.
-
-Playlist write operations remain out of scope for v1.0.0. Host backends should
-manage users, OAuth, encryption and refresh, then delegate access tokens to this
-MCP server.
+- Official Spotify Authorization Code OAuth for local single-user usage.
+- Delegated access-token mode via `x-spotify-access-token`.
+- Automatic access-token refresh for local OAuth tokens.
+- Spotify profile, search, devices, playback state, current track and queue
+  tools.
+- Playlist listing, playlist track listing and playlist playback.
+- Album track listing for public Spotify catalog albums.
+- Playback controls: play, search-and-play, pause, next, previous, volume,
+  queue add and playback transfer.
+- Dockerfile and Compose example for containerized deployments.
 
 ## Requirements
 
 - Spotify account.
 - Spotify Developer application.
-- Spotify Premium for playback control endpoints.
-- Node.js runtime for local development.
-- Docker for containerized usage.
+- Spotify Premium for Spotify playback-control endpoints.
+- Node.js `>=22` for local development.
+- Docker for containerized runtime.
 
-## Default Ports
-
-- MCP HTTP server: `11070`
-- OAuth callback: `http://127.0.0.1:11070/auth/callback`
-
-## Local Development
+## Quick Start
 
 Install dependencies:
 
@@ -57,33 +49,34 @@ Install dependencies:
 npm install
 ```
 
-Run type checks:
+Copy the environment example:
 
 ```bash
-npm run typecheck
+cp .env.example .env
 ```
 
-Build:
+Create a Spotify Developer application and add this redirect URI:
+
+```text
+http://127.0.0.1:11070/auth/callback
+```
+
+Then set `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in `.env`.
+
+Build and start:
 
 ```bash
 npm run build
-```
-
-Start the compiled server:
-
-```bash
 npm start
 ```
 
-`dev` and `start` load `.env` automatically.
+Open the local OAuth login URL:
 
-Healthcheck:
-
-```bash
-curl http://localhost:11070/health
+```text
+http://localhost:11070/auth/login
 ```
 
-Auth status:
+After authorization, check status:
 
 ```bash
 curl http://localhost:11070/auth/status
@@ -95,73 +88,122 @@ MCP endpoint:
 http://localhost:11070/mcp
 ```
 
-The v1.0 tool surface exposes:
+## Environment Variables
 
-- `spotify_ping`: validates MCP transport without calling Spotify.
-- `spotify_get_profile`: calls Spotify Web API `/me` using the local OAuth
-  token.
-- `spotify_search`: searches tracks, artists, albums and playlists.
-- `spotify_get_playlists`: lists current-user playlists.
-- `spotify_get_devices`: lists Spotify Connect devices.
-- `spotify_get_playback_state`: reads current playback state.
-- `spotify_get_current_track`: reads the current track or episode.
-- `spotify_get_queue`: reads the current item and upcoming queue.
-- `spotify_get_next_track`: reads the next queued item only.
-- `spotify_get_playlist_tracks`: lists tracks from a playlist.
-- `spotify_get_album_tracks`: lists tracks from an album.
-- `spotify_play`: starts or resumes playback.
-- `spotify_play_search`: searches a track and plays the best match.
-- `spotify_add_to_queue`: searches or receives a URI and adds a track to the
-  playback queue.
-- `spotify_play_playlist`: starts playback from a current-user playlist or exact
-  playlist URI/id.
-- `spotify_transfer_playback`: transfers playback to another Spotify Connect
-  device.
-- `spotify_pause`: pauses playback.
-- `spotify_next`: skips to the next track.
-- `spotify_previous`: skips to the previous track.
-- `spotify_set_volume`: sets playback volume.
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `PORT` | No | `11070` | HTTP server port. |
+| `HOST` | No | `0.0.0.0` | HTTP bind host. |
+| `SPOTIFY_CLIENT_ID` | Local OAuth | none | Spotify Developer application client id. |
+| `SPOTIFY_CLIENT_SECRET` | Local OAuth | none | Spotify Developer application client secret. |
+| `SPOTIFY_REDIRECT_URI` | Local OAuth | `http://127.0.0.1:11070/auth/callback` | Spotify OAuth callback URI. |
+| `SPOTIFY_TOKEN_STORE_PATH` | No | `.spotify-token.json` | Local single-user token file. |
+| `SPOTIFY_SCOPES` | No | v1 scope set | Comma-separated scopes requested by local OAuth. |
 
-## Docker
+Do not commit `.env` or `.spotify-token.json`.
 
-Build and run with the example compose file:
+## Running With Docker
+
+Build and run with the example Compose file:
 
 ```bash
 cp .env.example .env
 docker compose -f docker-compose.example.yml up --build
 ```
 
-## Local Spotify OAuth
-
-Create a Spotify Developer application with this redirect URI:
+The example binds the server to loopback:
 
 ```text
-http://127.0.0.1:11070/auth/callback
+127.0.0.1:11070
 ```
-
-Then configure `.env` and open:
-
-```text
-http://localhost:11070/auth/login
-```
-
-See [Local Spotify OAuth Setup](docs/OAUTH_LOCAL_SETUP.md).
-
-Access tokens are refreshed automatically when they are expired or close to
-expiration.
 
 ## Authentication Modes
 
-The default runtime is `local-token`: one local Spotify account authorizes this
-server through `/auth/login`, and the server stores that local development token
-at `SPOTIFY_TOKEN_STORE_PATH`.
+### Local Token Mode
 
-The backend integration runtime is `delegated-token`: a host application owns
-user identity, OAuth, encryption and refresh, then delegates a valid Spotify
-access token to the MCP server for tool execution. In that mode, the MCP server
-does not persist delegated user tokens.
+Use this mode for personal agents and local demos. The MCP server owns the local
+OAuth flow, stores one local token file and refreshes that token when needed.
 
-See [Delegated Token Mode](docs/DELEGATED_TOKEN_MODE.md) for the HTTP contract.
+Relevant endpoints:
+
+- `GET /auth/login`
+- `GET /auth/callback`
+- `GET /auth/status`
+
+See [Local Spotify OAuth Setup](docs/OAUTH_LOCAL_SETUP.md).
+
+### Delegated Token Mode
+
+Use this mode when another backend owns users and Spotify OAuth. The host
+backend passes a valid Spotify access token to MCP HTTP requests:
+
+```http
+x-spotify-access-token: <spotify-access-token>
+```
+
+Bearer form is also accepted:
+
+```http
+x-spotify-access-token: Bearer <spotify-access-token>
+```
+
+The delegated token is kept only in memory for the active MCP session. It is not
+written to disk.
+
+See [Delegated Token Mode](docs/DELEGATED_TOKEN_MODE.md).
+
+## MCP Tool Surface
+
+`v1.0.0` exposes these tools:
+
+| Tool | Purpose |
+| --- | --- |
+| `spotify_ping` | Validates MCP transport without calling Spotify. |
+| `spotify_get_profile` | Reads the authenticated Spotify profile. |
+| `spotify_search` | Searches tracks, artists, albums and playlists. |
+| `spotify_get_playlists` | Lists current-user playlists. |
+| `spotify_get_devices` | Lists Spotify Connect devices. |
+| `spotify_get_playback_state` | Reads current playback state. |
+| `spotify_get_current_track` | Reads the current track or episode. |
+| `spotify_get_queue` | Reads current item and upcoming queue. |
+| `spotify_get_next_track` | Reads the next queued item only. |
+| `spotify_get_playlist_tracks` | Lists tracks from a playlist. |
+| `spotify_get_album_tracks` | Lists tracks from an album. |
+| `spotify_play` | Starts or resumes playback from an exact Spotify URI. |
+| `spotify_play_search` | Searches a track and plays the best match. |
+| `spotify_add_to_queue` | Adds a track or episode to the queue. |
+| `spotify_play_playlist` | Starts playlist playback, optionally from a position. |
+| `spotify_transfer_playback` | Transfers playback to a Spotify Connect device. |
+| `spotify_pause` | Pauses playback. |
+| `spotify_next` | Skips to the next track. |
+| `spotify_previous` | Skips to the previous track. |
+| `spotify_set_volume` | Sets playback volume. |
+
+See [Tool Contract](docs/TOOLS.md) for schemas, scopes and output shape.
+
+## HTTP Surface
+
+| Route | Purpose |
+| --- | --- |
+| `GET /health` | Process healthcheck. |
+| `GET /ready` | Readiness check for local OAuth token availability. |
+| `GET /live` | Liveness check. |
+| `GET /auth/login` | Starts local Spotify OAuth. |
+| `GET /auth/callback` | Handles local Spotify OAuth callback. |
+| `GET /auth/status` | Reports local OAuth status. |
+| `POST /mcp` | Streamable HTTP MCP requests. |
+| `GET /mcp` | Streamable HTTP SSE stream for an MCP session. |
+| `DELETE /mcp` | Terminates an MCP session. |
+
+## Security Notes
+
+- Use the official Spotify Web API, not browser automation.
+- Never commit client secrets, access tokens or refresh tokens.
+- Keep `.env` and `.spotify-token.json` out of git and Docker build context.
+- Request only the scopes required by enabled tools.
+- Treat playback commands as user-visible side effects.
+- Host backends should own user identity, authorization policy, token encryption
+  and refresh when using delegated mode.
 
 ## Documentation
 
@@ -172,18 +214,14 @@ See [Delegated Token Mode](docs/DELEGATED_TOKEN_MODE.md) for the HTTP contract.
 - [Tool Contract](docs/TOOLS.md)
 - [Roadmap](ROADMAP.md)
 
-## Security
+## Non-Goals For v1.0.0
 
-Do not commit secrets or tokens. Use `.env` for Spotify application credentials
-and keep local token files out of git.
-
-The project should request only the scopes required by its enabled tools. New
-write permissions should be introduced deliberately and documented before they
-are implemented.
-
-The default OAuth/token store is intended for local single-user use. Multi-user
-agent backends should own user identity, token encryption and refresh outside of
-this MCP server, then integrate through delegated token mode.
+- Multi-user token storage inside this MCP server.
+- Host application user management.
+- Playlist write operations.
+- Browser automation.
+- Bypassing CAPTCHAs or platform safety systems.
+- Reverse engineering Spotify clients.
 
 ## License
 
